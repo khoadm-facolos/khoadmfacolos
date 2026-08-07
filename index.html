@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
+<html lang="vi"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Báo Cáo Giao Ban Nội Bộ — Executive Dashboard</title>
 <!-- Google Fonts: Playfair Display, Plus Jakarta Sans & JetBrains Mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -228,11 +227,11 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
 <body>
 
 <!-- ===================== UPLOAD SCREEN ===================== -->
-<div id="uploadScreen">
+<div id="uploadScreen" style="display: none;">
   <div class="upload-card">
     <div class="upload-eyebrow">Hệ thống báo cáo giao ban nội bộ</div>
     <h1>Tải file dữ liệu Excel để tổng hợp</h1>
-    <p class="lead">Kéo thả file Excel dữ liệu vào đây — dashboard với thẻ điểm KPI, so sánh MoM/YoY, biểu đồ xu hướng & cơ cấu chi phí sẽ tự động được tạo lập.</p>
+    <p class="lead">Kéo thả file Excel dữ liệu vào đây — dashboard với thẻ điểm KPI, so sánh MoM/YoY, biểu đồ xu hướng &amp; cơ cấu chi phí sẽ tự động được tạo lập.</p>
     
     <div class="dropzone" id="dropzone">
       <div class="icon">⇪</div>
@@ -241,7 +240,7 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
       <input type="file" id="fileInput" accept=".xlsx,.xls">
     </div>
     
-    <div class="upload-status" id="uploadStatus"></div>
+    <div class="upload-status ok" id="uploadStatus">Nhập dữ liệu thành công! Đang tải báo cáo…</div>
     
     <button class="btn-demo" id="btnUseDemo">Made by KhoaDo</button>
 
@@ -252,24 +251,24 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
 </div>
 
 <!-- ===================== REPORT SCREEN ===================== -->
-<div id="reportScreen">
+<div id="reportScreen" style="display: block;">
   <div class="topbar">
     <div class="topbar-left">
-      <div class="mark" id="brandMark"><img src="data:image/png;base64,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" alt="Facolos" /></div>
-      <div class="brand-text"><b id="brandName">CÔNG TY CỔ PHẦN ABC</b>Báo cáo giao ban nội bộ</div>
+      <div class="mark" id="brandMark"><img src="data:image/png;base64,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" alt="Facolos"></div>
+      <div class="brand-text"><b id="brandName">Công ty Cổ phần Thể thao Facolos</b>Báo cáo giao ban nội bộ</div>
     </div>
-    <div class="topbar-title" id="reportTitle">Kết quả Kinh doanh &amp; Kế hoạch</div>
-    <div class="topbar-right">Người lập: <span id="metaAuthor">—</span><br>Phát hành: <span id="metaDate">—</span></div>
+    <div class="topbar-title" id="reportTitle">Kết quả Kinh doanh T8/2026 &amp; Kế hoạch T9/2026</div>
+    <div class="topbar-right">Người lập: <span id="metaAuthor">Đỗ Minh Khoa</span><br>Phát hành: <span id="metaDate">06/08/2026</span></div>
   </div>
 
   <div class="filterbar">
     <div class="filter-item">
       <label>Năm:</label>
-      <select id="yearSelect"></select>
+      <select id="yearSelect"><option value="2026">Năm 2026</option><option value="2025">Năm 2025</option></select>
     </div>
     <div class="filter-item">
       <label>Tháng xem:</label>
-      <select id="monthSelect"></select>
+      <select id="monthSelect"><option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option></select>
     </div>
     <div class="navlinks">
       <a href="#tongquan">01 Thẻ điểm</a>
@@ -294,7 +293,55 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
         </div>
         <div class="section-desc">Mốc vạch vàng là chỉ tiêu Kế hoạch; màu sắc phản ánh mức độ hoàn thành thuận lợi/bất lợi.</div>
       </div>
-      <div class="scorecards" id="kpiCards"></div>
+      <div class="scorecards" id="kpiCards" style="grid-template-columns: repeat(6, 1fr);"><div class="card">
+      <div class="kpi-label">Doanh thu thuần</div>
+      <div class="kpi-actual">18,1 <span class="kpi-unit">tỷ</span></div>
+      <div class="kpi-plan">KH: 18,2 tỷ</div>
+      <span class="ticker down">▼ -0,5%</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:92.0838420838421%;background:var(--down)"></div>
+        <div class="bar-plan-mark" style="left:92.5925925925926%"></div>
+      </div></div><div class="card">
+      <div class="kpi-label">Giá vốn</div>
+      <div class="kpi-actual">11,2 <span class="kpi-unit">tỷ</span></div>
+      <div class="kpi-plan">KH: 11,3 tỷ</div>
+      <span class="ticker up">▼ -0,9%</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:91.77318911832184%;background:var(--brand)"></div>
+        <div class="bar-plan-mark" style="left:92.59259259259258%"></div>
+      </div></div><div class="card">
+      <div class="kpi-label">Lợi nhuận gộp</div>
+      <div class="kpi-actual">6,9 <span class="kpi-unit">tỷ</span></div>
+      <div class="kpi-plan">KH: 6,9 tỷ</div>
+      <span class="ticker up">■ 0%</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:92.59259259259258%;background:var(--brand)"></div>
+        <div class="bar-plan-mark" style="left:92.59259259259258%"></div>
+      </div></div><div class="card">
+      <div class="kpi-label">CPBH</div>
+      <div class="kpi-actual">2,6 <span class="kpi-unit">tỷ</span></div>
+      <div class="kpi-plan">KH: 2,4 tỷ</div>
+      <span class="ticker down">▲ +8,3%</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:92.59259259259258%;background:var(--down)"></div>
+        <div class="bar-plan-mark" style="left:85.47008547008545%"></div>
+      </div></div><div class="card">
+      <div class="kpi-label">CPQL</div>
+      <div class="kpi-actual">1,4 <span class="kpi-unit">tỷ</span></div>
+      <div class="kpi-plan">KH: 1,5 tỷ</div>
+      <span class="ticker up">▼ -6,7%</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:86.41975308641973%;background:var(--brand)"></div>
+        <div class="bar-plan-mark" style="left:92.59259259259258%"></div>
+      </div></div><div class="card">
+      <div class="kpi-label">EBITDA</div>
+      <div class="kpi-actual">2,9 <span class="kpi-unit">tỷ</span></div>
+      <div class="kpi-plan">KH: 3 tỷ</div>
+      <span class="ticker down">▼ -3,3%</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:89.50617283950616%;background:var(--down)"></div>
+        <div class="bar-plan-mark" style="left:92.59259259259258%"></div>
+      </div></div></div>
     </section>
 
     <!-- SECTION 02 -->
@@ -316,7 +363,37 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
             <th class="num">So với cùng kỳ</th>
           </tr>
         </thead>
-        <tbody id="cmpTableBody"></tbody>
+        <tbody id="cmpTableBody"><tr>
+      <td class="item">Doanh thu thuần</td>
+      <td class="num">18,1 tỷ</td>
+      <td class="num">18,5 tỷ</td>
+      <td class="num"><span class="delta-pill down">-2,2%</span></td>
+      <td class="num">14,3 tỷ</td>
+      <td class="num"><span class="delta-pill up">+26,6%</span></td></tr><tr>
+      <td class="item">Giá vốn</td>
+      <td class="num">11,2 tỷ</td>
+      <td class="num">11,5 tỷ</td>
+      <td class="num"><span class="delta-pill up">-2,6%</span></td>
+      <td class="num">8,9 tỷ</td>
+      <td class="num"><span class="delta-pill down">+25,8%</span></td></tr><tr>
+      <td class="item">Lợi nhuận gộp</td>
+      <td class="num">6,9 tỷ</td>
+      <td class="num">7 tỷ</td>
+      <td class="num"><span class="delta-pill down">-1,4%</span></td>
+      <td class="num">5,4 tỷ</td>
+      <td class="num"><span class="delta-pill up">+27,8%</span></td></tr><tr>
+      <td class="item">Chi phí vận hành</td>
+      <td class="num">4 tỷ</td>
+      <td class="num">3,8 tỷ</td>
+      <td class="num"><span class="delta-pill down">+5,3%</span></td>
+      <td class="num">3,1 tỷ</td>
+      <td class="num"><span class="delta-pill down">+29%</span></td></tr><tr>
+      <td class="item">EBITDA</td>
+      <td class="num">2,9 tỷ</td>
+      <td class="num">3,2 tỷ</td>
+      <td class="num"><span class="delta-pill down">-9,4%</span></td>
+      <td class="num">2,3 tỷ</td>
+      <td class="num"><span class="delta-pill up">+26,1%</span></td></tr></tbody>
       </table></div>
     </section>
 
@@ -333,24 +410,24 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
         <div class="chart-card">
           <h3>Doanh thu thuần theo tháng</h3>
           <div class="chart-sub">Kế hoạch vs Thực tế · Tỷ đồng</div>
-          <div class="chart-wrap"><canvas id="chartDttThang"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartDttThang" style="display: block; box-sizing: border-box; height: 230px; width: 559px;" height="230" width="559"></canvas></div>
         </div>
         <div class="chart-card">
           <h3>Lũy kế doanh thu thuần (YTD)</h3>
           <div class="chart-sub">Từ đầu năm đến tháng hiện tại · Tỷ đồng</div>
-          <div class="chart-wrap"><canvas id="chartDttLuyKe"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartDttLuyKe" style="display: block; box-sizing: border-box; height: 230px; width: 559px;" height="230" width="559"></canvas></div>
         </div>
       </div>
       <div class="chart-grid">
         <div class="chart-card">
           <h3>Chi phí vận hành theo tháng</h3>
           <div class="chart-sub">Kế hoạch vs Thực tế · Tỷ đồng</div>
-          <div class="chart-wrap"><canvas id="chartCpThang"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartCpThang" style="display: block; box-sizing: border-box; height: 230px; width: 559px;" height="230" width="559"></canvas></div>
         </div>
         <div class="chart-card">
           <h3>Lũy kế chi phí vận hành (YTD)</h3>
           <div class="chart-sub">Từ đầu năm đến tháng hiện tại · Tỷ đồng</div>
-          <div class="chart-wrap"><canvas id="chartCpLuyKe"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartCpLuyKe" style="display: block; box-sizing: border-box; height: 230px; width: 559px;" height="230" width="559"></canvas></div>
         </div>
       </div>
     </section>
@@ -373,7 +450,7 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
         
         <!-- DYNAMIC FILTER SELECT -->
         <div class="dim-filter" id="kenhFilterContainer">
-          <select id="kenhSelect"><option value="ALL">Tất cả kênh bán</option></select>
+          <select id="kenhSelect" data-filled="1"><option value="ALL">Tất cả kênh bán</option><option value="Sỉ Quốc tế">Sỉ Quốc tế</option><option value="Sỉ Việt Nam">Sỉ Việt Nam</option><option value="Bán lẻ">Bán lẻ</option><option value="Partnership">Partnership</option></select>
         </div>
         <div class="dim-filter" id="spFilterContainer" style="display:none;">
           <select id="spSelect"><option value="ALL">Tất cả sản phẩm</option></select>
@@ -382,22 +459,30 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
 
       <!-- 4.1 VIEW KENH BAN -->
       <div id="blockKenh">
-        <div id="kenhAllView">
+        <div id="kenhAllView" style="display: block;">
           <div class="chart-card" style="margin-bottom:20px;">
             <h3>Biểu đồ doanh thu thực tế vs kế hoạch theo Kênh bán</h3>
             <div class="chart-sub">Tỷ đồng</div>
-            <div class="chart-wrap" style="min-height:260px;"><canvas id="kenhChartMain"></canvas></div>
+            <div class="chart-wrap" style="min-height:260px;"><canvas id="kenhChartMain" style="display: block; box-sizing: border-box; height: 260px; width: 1182px;" height="260" width="1182"></canvas></div>
           </div>
           <div class="table-wrap"><table class="data" style="margin-bottom:20px;">
             <thead>
               <tr><th>Kênh bán</th><th class="num">Kế hoạch</th><th class="num">Thực tế</th><th class="num">% Đạt KH</th><th class="num">So tháng trước</th><th class="num">So cùng kỳ</th></tr>
             </thead>
-            <tbody id="kenhTableBody"></tbody>
+            <tbody id="kenhTableBody"><tr><td class="name">Sỉ Quốc tế</td><td class="num">6,9</td><td class="num">7</td>
+          <td class="num">101%</td><td class="num"><span class="delta-pill down">-1,4%</span></td>
+          <td class="num"><span class="delta-pill up">+27,3%</span></td></tr><tr><td class="name">Sỉ Việt Nam</td><td class="num">6,4</td><td class="num">6,5</td>
+          <td class="num">102%</td><td class="num"><span class="delta-pill up">+0%</span></td>
+          <td class="num"><span class="delta-pill up">+20,4%</span></td></tr><tr><td class="name">Bán lẻ</td><td class="num">3,5</td><td class="num">3,7</td>
+          <td class="num">106%</td><td class="num"><span class="delta-pill up">+8,8%</span></td>
+          <td class="num"><span class="delta-pill up">+37%</span></td></tr><tr><td class="name">Partnership</td><td class="num">1,5</td><td class="num">1,5</td>
+          <td class="num">100%</td><td class="num"><span class="delta-pill up">+0%</span></td>
+          <td class="num"><span class="delta-pill up">+25%</span></td></tr><tr class="total"><td class="name">Tổng cộng</td><td class="num">18,3</td><td class="num">18,7</td><td class="num">102%</td><td class="num">—</td><td class="num">—</td></tr></tbody>
           </table></div>
           <div class="chart-card">
             <h3>Lũy kế doanh thu các kênh (YTD)</h3>
             <div class="chart-sub">Diễn biến các tháng từ đầu năm</div>
-            <div class="chart-wrap"><canvas id="kenhChartCum"></canvas></div>
+            <div class="chart-wrap"><canvas id="kenhChartCum" style="display: block; box-sizing: border-box; height: 230px; width: 1182px;" height="230" width="1182"></canvas></div>
           </div>
         </div>
         <div id="kenhFocusView" style="display:none;">
@@ -470,13 +555,13 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
       <div class="chart-grid" style="margin-bottom:20px;">
         <div class="chart-card">
           <h3>Cơ cấu chi phí theo khoản mục</h3>
-          <div class="chart-sub" id="costDesc">% trên tổng chi phí thực tế</div>
-          <div class="chart-wrap"><canvas id="chartCostStructure"></canvas></div>
+          <div class="chart-sub" id="costDesc">Tổng chi phí thực tế: 17,55 tỷ đồng</div>
+          <div class="chart-wrap"><canvas id="chartCostStructure" style="display: block; box-sizing: border-box; height: 230px; width: 559px;" height="230" width="559"></canvas></div>
         </div>
         <div class="chart-card">
           <h3>Chi phí theo Phòng ban</h3>
           <div class="chart-sub">Định mức vs Thực tế · Tỷ đồng</div>
-          <div class="chart-wrap"><canvas id="chartCostDept"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartCostDept" style="display: block; box-sizing: border-box; height: 230px; width: 559px;" height="230" width="559"></canvas></div>
         </div>
       </div>
 
@@ -493,14 +578,70 @@ footer{background:linear-gradient(135deg, #071F1A 0%, #0E3D34 100%); color:var(-
             <th>Nguyên nhân chênh lệch</th>
           </tr>
         </thead>
-        <tbody id="costTableBody"></tbody>
+        <tbody id="costTableBody"><tr><td>Chi phí bán hàng</td><td class="name">Lương bán hàng</td><td>Sales</td>
+      <td class="num">0,45</td><td class="num">0,45</td>
+      <td class="num"><span class="delta-pill up">+0</span></td>
+      <td><span class="status-pill up">Kiểm soát tốt</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí bán hàng</td><td class="name">Marketing</td><td>MKT</td>
+      <td class="num">0,6</td><td class="num">0,6</td>
+      <td class="num"><span class="delta-pill up">+0</span></td>
+      <td><span class="status-pill up">Kiểm soát tốt</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí bán hàng</td><td class="name">Khuyến mãi</td><td>MKT</td>
+      <td class="num">0,2</td><td class="num">0,19</td>
+      <td class="num"><span class="delta-pill up">-0,01</span></td>
+      <td><span class="status-pill up">Kiểm soát tốt</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí quản lý</td><td class="name">Lương quản lý</td><td>Admin</td>
+      <td class="num">0,4</td><td class="num">0,41</td>
+      <td class="num"><span class="delta-pill down">+0,01</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí quản lý</td><td class="name">Thuê văn phòng</td><td>Admin</td>
+      <td class="num">0,2</td><td class="num">0,21</td>
+      <td class="num"><span class="delta-pill down">+0,01</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí bán hàng</td><td class="name">Tài trợ</td><td>MKT</td>
+      <td class="num">0,45</td><td class="num">0,45</td>
+      <td class="num"><span class="delta-pill up">+0</span></td>
+      <td><span class="status-pill up">Kiểm soát tốt</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí bán hàng</td><td class="name">Quảng cáo</td><td>Bán lẻ</td>
+      <td class="num">0,6</td><td class="num">2</td>
+      <td class="num"><span class="delta-pill down">+1,4</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">Vượt quá mức</td></tr><tr><td>Chi phí bán hàng</td><td class="name">Thưởng Commison</td><td>Kinh doanh</td>
+      <td class="num">0,2</td><td class="num">5</td>
+      <td class="num"><span class="delta-pill down">+4,8</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">Vượt quá mức</td></tr><tr><td>Chi phí quản lý</td><td class="name">Văn phòng phẩm</td><td>HCNS</td>
+      <td class="num">0,4</td><td class="num">0,41</td>
+      <td class="num"><span class="delta-pill down">+0,01</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí quản lý</td><td class="name">Đăng ký nhãn hiệu</td><td>HCNS</td>
+      <td class="num">0,2</td><td class="num">0,21</td>
+      <td class="num"><span class="delta-pill down">+0,01</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí bán hàng</td><td class="name">Quảng cáo</td><td>MKT</td>
+      <td class="num">0,6</td><td class="num">2</td>
+      <td class="num"><span class="delta-pill down">+1,4</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">Vượt quá mức</td></tr><tr><td>Chi phí bán hàng</td><td class="name">Thưởng Commison</td><td>Bán lẻ</td>
+      <td class="num">0,2</td><td class="num">5</td>
+      <td class="num"><span class="delta-pill down">+4,8</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">Vượt quá mức</td></tr><tr><td>Chi phí quản lý</td><td class="name">Điện nước</td><td>HCNS</td>
+      <td class="num">0,4</td><td class="num">0,41</td>
+      <td class="num"><span class="delta-pill down">+0,01</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr><tr><td>Chi phí quản lý</td><td class="name">Lương quản lý</td><td>HCNS</td>
+      <td class="num">0,2</td><td class="num">0,21</td>
+      <td class="num"><span class="delta-pill down">+0,01</span></td>
+      <td><span class="status-pill down">Vượt định mức</span></td>
+      <td style="color:var(--muted); font-size:12.5px;">—</td></tr></tbody>
       </table></div>
-      <div class="table-scroll-hint" id="costTableHint">Cuộn để xem thêm — <span id="costRowCount">0</span> khoản mục</div>
+      <div class="table-scroll-hint" id="costTableHint" style="display: block;">Cuộn để xem thêm — <span id="costRowCount">14</span> khoản mục</div>
     </section>
   </main>
 
   <footer>
-    <div id="footerLine">Báo cáo giao ban — Lưu hành nội bộ</div>
+    <div id="footerLine">Báo cáo giao ban T8/2026 — Công ty Cổ phần Thể thao Facolos · Lưu hành nội bộ</div>
     <div>Hệ thống tổng hợp dữ liệu điều hành tự động</div>
   </footer>
 </div>
@@ -1377,5 +1518,19 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   }
 });
 </script>
-</body>
-</html>
+
+
+
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+  try{
+    startApp({"thongTin":[{"Trường thông tin":"Tên công ty","Giá trị":"Công ty Cổ phần Thể thao Facolos"},{"Trường thông tin":"Người lập báo cáo","Giá trị":"Đỗ Minh Khoa"},{"Trường thông tin":"Ngày phát hành","Giá trị":"06/08/2026"}],"kpi":[{"Tháng":"T6/2025","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":14,"Thực tế (tỷ đồng)":14.1},{"Tháng":"T6/2025","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":8.7,"Thực tế (tỷ đồng)":8.7},{"Tháng":"T6/2025","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":5.3,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T6/2025","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":1.8,"Thực tế (tỷ đồng)":1.8},{"Tháng":"T6/2025","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.1,"Thực tế (tỷ đồng)":1.1},{"Tháng":"T6/2025","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T6/2025","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":2.9,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T7/2025","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":14.3,"Thực tế (tỷ đồng)":14.9},{"Tháng":"T7/2025","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":8.9,"Thực tế (tỷ đồng)":9.2},{"Tháng":"T7/2025","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":5.4,"Thực tế (tỷ đồng)":5.7},{"Tháng":"T7/2025","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":1.9,"Thực tế (tỷ đồng)":1.8},{"Tháng":"T7/2025","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.1,"Thực tế (tỷ đồng)":1.1},{"Tháng":"T7/2025","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.8},{"Tháng":"T7/2025","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T8/2025","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":14.6,"Thực tế (tỷ đồng)":14.3},{"Tháng":"T8/2025","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":9.1,"Thực tế (tỷ đồng)":8.9},{"Tháng":"T8/2025","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":5.5,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T8/2025","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":1.9,"Thực tế (tỷ đồng)":1.9},{"Tháng":"T8/2025","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T8/2025","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T8/2025","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.1,"Thực tế (tỷ đồng)":3.1},{"Tháng":"T9/2025","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":14.9,"Thực tế (tỷ đồng)":14.4},{"Tháng":"T9/2025","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":9.2,"Thực tế (tỷ đồng)":8.9},{"Tháng":"T9/2025","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":5.7,"Thực tế (tỷ đồng)":5.5},{"Tháng":"T9/2025","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":1.9,"Thực tế (tỷ đồng)":2},{"Tháng":"T9/2025","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T9/2025","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.6,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T9/2025","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.1,"Thực tế (tỷ đồng)":3.2},{"Tháng":"T10/2025","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":15.2,"Thực tế (tỷ đồng)":14.5},{"Tháng":"T10/2025","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":9.4,"Thực tế (tỷ đồng)":9},{"Tháng":"T10/2025","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":5.8,"Thực tế (tỷ đồng)":5.5},{"Tháng":"T10/2025","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2,"Thực tế (tỷ đồng)":2},{"Tháng":"T10/2025","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T10/2025","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.6,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T10/2025","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.2,"Thực tế (tỷ đồng)":3.2},{"Tháng":"T11/2025","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":15.5,"Thực tế (tỷ đồng)":15.4},{"Tháng":"T11/2025","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":9.6,"Thực tế (tỷ đồng)":9.5},{"Tháng":"T11/2025","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":5.9,"Thực tế (tỷ đồng)":5.9},{"Tháng":"T11/2025","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2,"Thực tế (tỷ đồng)":2},{"Tháng":"T11/2025","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T11/2025","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.7,"Thực tế (tỷ đồng)":2.7},{"Tháng":"T11/2025","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.2,"Thực tế (tỷ đồng)":3.2},{"Tháng":"T12/2025","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":15.8,"Thực tế (tỷ đồng)":16.3},{"Tháng":"T12/2025","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":9.8,"Thực tế (tỷ đồng)":10.1},{"Tháng":"T12/2025","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6,"Thực tế (tỷ đồng)":6.2},{"Tháng":"T12/2025","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.1,"Thực tế (tỷ đồng)":2},{"Tháng":"T12/2025","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T12/2025","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.6,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T12/2025","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.4,"Thực tế (tỷ đồng)":3.3},{"Tháng":"T1/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":16.1,"Thực tế (tỷ đồng)":15.8},{"Tháng":"T1/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":10,"Thực tế (tỷ đồng)":9.8},{"Tháng":"T1/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.1,"Thực tế (tỷ đồng)":6},{"Tháng":"T1/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.1,"Thực tế (tỷ đồng)":2.2},{"Tháng":"T1/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T1/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.7,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T1/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.4,"Thực tế (tỷ đồng)":3.5},{"Tháng":"T2/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":16.4,"Thực tế (tỷ đồng)":15.9},{"Tháng":"T2/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":10.2,"Thực tế (tỷ đồng)":9.9},{"Tháng":"T2/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.2,"Thực tế (tỷ đồng)":6},{"Tháng":"T2/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.1,"Thực tế (tỷ đồng)":2.1},{"Tháng":"T2/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T2/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.8,"Thực tế (tỷ đồng)":2.6},{"Tháng":"T2/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.4,"Thực tế (tỷ đồng)":3.4},{"Tháng":"T3/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":16.7,"Thực tế (tỷ đồng)":17.5},{"Tháng":"T3/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":10.4,"Thực tế (tỷ đồng)":10.8},{"Tháng":"T3/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.3,"Thực tế (tỷ đồng)":6.7},{"Tháng":"T3/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.2,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T3/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T3/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.8,"Thực tế (tỷ đồng)":3.2},{"Tháng":"T3/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.5,"Thực tế (tỷ đồng)":3.5},{"Tháng":"T4/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":17,"Thực tế (tỷ đồng)":16.5},{"Tháng":"T4/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":10.5,"Thực tế (tỷ đồng)":10.2},{"Tháng":"T4/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.5,"Thực tế (tỷ đồng)":6.3},{"Tháng":"T4/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.2,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T4/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.5},{"Tháng":"T4/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":2.9,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T4/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.6,"Thực tế (tỷ đồng)":3.8},{"Tháng":"T5/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":17.3,"Thực tế (tỷ đồng)":17.2},{"Tháng":"T5/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":10.7,"Thực tế (tỷ đồng)":10.7},{"Tháng":"T5/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.6,"Thực tế (tỷ đồng)":6.5},{"Tháng":"T5/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.2,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T5/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T5/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":3,"Thực tế (tỷ đồng)":2.8},{"Tháng":"T5/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.6,"Thực tế (tỷ đồng)":3.7},{"Tháng":"T6/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":17.6,"Thực tế (tỷ đồng)":17.9},{"Tháng":"T6/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":10.9,"Thực tế (tỷ đồng)":11.1},{"Tháng":"T6/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.7,"Thực tế (tỷ đồng)":6.8},{"Tháng":"T6/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.3,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T6/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T6/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":3,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T6/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.7,"Thực tế (tỷ đồng)":3.9},{"Tháng":"T7/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":17.9,"Thực tế (tỷ đồng)":18.5},{"Tháng":"T7/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":11.1,"Thực tế (tỷ đồng)":11.5},{"Tháng":"T7/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.8,"Thực tế (tỷ đồng)":7},{"Tháng":"T7/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.3,"Thực tế (tỷ đồng)":2.4},{"Tháng":"T7/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T7/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":3.1,"Thực tế (tỷ đồng)":3.2},{"Tháng":"T7/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.7,"Thực tế (tỷ đồng)":3.8},{"Tháng":"T8/2026","Chỉ tiêu":"Doanh thu thuần","Kế hoạch (tỷ đồng)":18.2,"Thực tế (tỷ đồng)":18.1},{"Tháng":"T8/2026","Chỉ tiêu":"Giá vốn","Kế hoạch (tỷ đồng)":11.3,"Thực tế (tỷ đồng)":11.2},{"Tháng":"T8/2026","Chỉ tiêu":"Lợi nhuận gộp","Kế hoạch (tỷ đồng)":6.9,"Thực tế (tỷ đồng)":6.9},{"Tháng":"T8/2026","Chỉ tiêu":"CPBH","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.6},{"Tháng":"T8/2026","Chỉ tiêu":"CPQL","Kế hoạch (tỷ đồng)":1.5,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T8/2026","Chỉ tiêu":"EBITDA","Kế hoạch (tỷ đồng)":3,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T8/2026","Chỉ tiêu":"Chi phí vận hành","Kế hoạch (tỷ đồng)":3.9,"Thực tế (tỷ đồng)":4}],"kenh":[{"Tháng":"T6/2025","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":5.3,"Thực tế (tỷ đồng)":5.3},{"Tháng":"T6/2025","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":4.9,"Thực tế (tỷ đồng)":5},{"Tháng":"T6/2025","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":2.7,"Thực tế (tỷ đồng)":2.8},{"Tháng":"T6/2025","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.1,"Thực tế (tỷ đồng)":1.1},{"Tháng":"T7/2025","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":5.4,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T7/2025","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5,"Thực tế (tỷ đồng)":5.1},{"Tháng":"T7/2025","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":2.7,"Thực tế (tỷ đồng)":2.6},{"Tháng":"T7/2025","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.1,"Thực tế (tỷ đồng)":1.1},{"Tháng":"T8/2025","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":5.5,"Thực tế (tỷ đồng)":5.5},{"Tháng":"T8/2025","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.1,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T8/2025","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":2.8,"Thực tế (tỷ đồng)":2.7},{"Tháng":"T8/2025","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T9/2025","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":5.7,"Thực tế (tỷ đồng)":5.8},{"Tháng":"T9/2025","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.2,"Thực tế (tỷ đồng)":5.2},{"Tháng":"T9/2025","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":2.8,"Thực tế (tỷ đồng)":2.7},{"Tháng":"T9/2025","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T10/2025","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":5.8,"Thực tế (tỷ đồng)":6},{"Tháng":"T10/2025","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.3,"Thực tế (tỷ đồng)":5.2},{"Tháng":"T10/2025","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":2.9,"Thực tế (tỷ đồng)":2.8},{"Tháng":"T10/2025","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T11/2025","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":5.9,"Thực tế (tỷ đồng)":5.8},{"Tháng":"T11/2025","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.4,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T11/2025","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":2.9,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T11/2025","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T12/2025","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6,"Thực tế (tỷ đồng)":5.7},{"Tháng":"T12/2025","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.5,"Thực tế (tỷ đồng)":5.3},{"Tháng":"T12/2025","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T12/2025","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T1/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.1,"Thực tế (tỷ đồng)":6},{"Tháng":"T1/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.6,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T1/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.1,"Thực tế (tỷ đồng)":3},{"Tháng":"T1/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T2/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.2,"Thực tế (tỷ đồng)":6.2},{"Tháng":"T2/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.7,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T2/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.1,"Thực tế (tỷ đồng)":3.1},{"Tháng":"T2/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T3/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.3,"Thực tế (tỷ đồng)":6},{"Tháng":"T3/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.8,"Thực tế (tỷ đồng)":6},{"Tháng":"T3/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.2,"Thực tế (tỷ đồng)":3.3},{"Tháng":"T3/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T4/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.5,"Thực tế (tỷ đồng)":6.7},{"Tháng":"T4/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":5.9,"Thực tế (tỷ đồng)":5.7},{"Tháng":"T4/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.2,"Thực tế (tỷ đồng)":3.3},{"Tháng":"T4/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T5/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.6,"Thực tế (tỷ đồng)":6.6},{"Tháng":"T5/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":6.1,"Thực tế (tỷ đồng)":6.3},{"Tháng":"T5/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.3,"Thực tế (tỷ đồng)":3.3},{"Tháng":"T5/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T6/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.7,"Thực tế (tỷ đồng)":6.9},{"Tháng":"T6/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":6.2,"Thực tế (tỷ đồng)":6.4},{"Tháng":"T6/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.3,"Thực tế (tỷ đồng)":3.3},{"Tháng":"T6/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T7/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.8,"Thực tế (tỷ đồng)":7.1},{"Tháng":"T7/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":6.3,"Thực tế (tỷ đồng)":6.5},{"Tháng":"T7/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.4,"Thực tế (tỷ đồng)":3.4},{"Tháng":"T7/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.5},{"Tháng":"T8/2026","Kênh":"Sỉ Quốc tế","Kế hoạch (tỷ đồng)":6.9,"Thực tế (tỷ đồng)":7},{"Tháng":"T8/2026","Kênh":"Sỉ Việt Nam","Kế hoạch (tỷ đồng)":6.4,"Thực tế (tỷ đồng)":6.5},{"Tháng":"T8/2026","Kênh":"Bán lẻ","Kế hoạch (tỷ đồng)":3.5,"Thực tế (tỷ đồng)":3.7},{"Tháng":"T8/2026","Kênh":"Partnership","Kế hoạch (tỷ đồng)":1.5,"Thực tế (tỷ đồng)":1.5}],"sanPham":[{"Tháng":"T6/2025","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":4.6,"Thực tế (tỷ đồng)":4.6},{"Tháng":"T6/2025","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":3.5,"Thực tế (tỷ đồng)":3.5},{"Tháng":"T6/2025","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.2,"Thực tế (tỷ đồng)":2.1},{"Tháng":"T6/2025","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2,"Thực tế (tỷ đồng)":2},{"Tháng":"T6/2025","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.1,"Thực tế (tỷ đồng)":1.1},{"Tháng":"T6/2025","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T7/2025","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":4.7,"Thực tế (tỷ đồng)":4.6},{"Tháng":"T7/2025","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":3.6,"Thực tế (tỷ đồng)":3.7},{"Tháng":"T7/2025","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.3,"Thực tế (tỷ đồng)":2.2},{"Tháng":"T7/2025","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2,"Thực tế (tỷ đồng)":2},{"Tháng":"T7/2025","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.1,"Thực tế (tỷ đồng)":1.1},{"Tháng":"T7/2025","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T8/2025","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":4.8,"Thực tế (tỷ đồng)":4.6},{"Tháng":"T8/2025","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":3.6,"Thực tế (tỷ đồng)":3.6},{"Tháng":"T8/2025","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.3,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T8/2025","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2,"Thực tế (tỷ đồng)":2},{"Tháng":"T8/2025","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T8/2025","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T9/2025","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":4.9,"Thực tế (tỷ đồng)":5},{"Tháng":"T9/2025","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":3.7,"Thực tế (tỷ đồng)":3.9},{"Tháng":"T9/2025","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T9/2025","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.1,"Thực tế (tỷ đồng)":2.1},{"Tháng":"T9/2025","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T9/2025","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T10/2025","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5,"Thực tế (tỷ đồng)":5},{"Tháng":"T10/2025","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":3.8,"Thực tế (tỷ đồng)":3.6},{"Tháng":"T10/2025","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.4},{"Tháng":"T10/2025","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.1,"Thực tế (tỷ đồng)":2.1},{"Tháng":"T10/2025","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.1},{"Tháng":"T10/2025","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T11/2025","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.1,"Thực tế (tỷ đồng)":5},{"Tháng":"T11/2025","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":3.9,"Thực tế (tỷ đồng)":3.8},{"Tháng":"T11/2025","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.5,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T11/2025","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.2,"Thực tế (tỷ đồng)":2.2},{"Tháng":"T11/2025","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.2,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T11/2025","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T12/2025","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.2,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T12/2025","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4,"Thực tế (tỷ đồng)":4.1},{"Tháng":"T12/2025","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.5,"Thực tế (tỷ đồng)":2.6},{"Tháng":"T12/2025","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.2,"Thực tế (tỷ đồng)":2.1},{"Tháng":"T12/2025","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T12/2025","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T1/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.3,"Thực tế (tỷ đồng)":5.5},{"Tháng":"T1/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4,"Thực tế (tỷ đồng)":3.9},{"Tháng":"T1/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.6,"Thực tế (tỷ đồng)":2.7},{"Tháng":"T1/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.3,"Thực tế (tỷ đồng)":2.4},{"Tháng":"T1/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.3},{"Tháng":"T1/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6},{"Tháng":"T2/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.4,"Thực tế (tỷ đồng)":5.5},{"Tháng":"T2/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4.1,"Thực tế (tỷ đồng)":4},{"Tháng":"T2/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.6,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T2/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.3,"Thực tế (tỷ đồng)":2.4},{"Tháng":"T2/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.2},{"Tháng":"T2/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.7,"Thực tế (tỷ đồng)":0.7},{"Tháng":"T3/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.5,"Thực tế (tỷ đồng)":5.5},{"Tháng":"T3/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4.2,"Thực tế (tỷ đồng)":4.2},{"Tháng":"T3/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.7,"Thực tế (tỷ đồng)":2.7},{"Tháng":"T3/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.3,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T3/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.3,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T3/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.7,"Thực tế (tỷ đồng)":0.7},{"Tháng":"T4/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.6,"Thực tế (tỷ đồng)":5.4},{"Tháng":"T4/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4.2,"Thực tế (tỷ đồng)":4.2},{"Tháng":"T4/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.7,"Thực tế (tỷ đồng)":2.6},{"Tháng":"T4/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.3},{"Tháng":"T4/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.5},{"Tháng":"T4/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.7,"Thực tế (tỷ đồng)":0.7},{"Tháng":"T5/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.7,"Thực tế (tỷ đồng)":5.7},{"Tháng":"T5/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4.3,"Thực tế (tỷ đồng)":4.5},{"Tháng":"T5/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.8,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T5/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.4,"Thực tế (tỷ đồng)":2.4},{"Tháng":"T5/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T5/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.7,"Thực tế (tỷ đồng)":0.7},{"Tháng":"T6/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.8,"Thực tế (tỷ đồng)":5.8},{"Tháng":"T6/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4.4,"Thực tế (tỷ đồng)":4.3},{"Tháng":"T6/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.8,"Thực tế (tỷ đồng)":2.8},{"Tháng":"T6/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.5,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T6/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T6/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.7,"Thực tế (tỷ đồng)":0.7},{"Tháng":"T7/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":5.9,"Thực tế (tỷ đồng)":5.8},{"Tháng":"T7/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4.5,"Thực tế (tỷ đồng)":4.7},{"Tháng":"T7/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.9,"Thực tế (tỷ đồng)":2.9},{"Tháng":"T7/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.5,"Thực tế (tỷ đồng)":2.5},{"Tháng":"T7/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.4,"Thực tế (tỷ đồng)":1.4},{"Tháng":"T7/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.7,"Thực tế (tỷ đồng)":0.7},{"Tháng":"T8/2026","Sản phẩm":"Vợt","Kế hoạch (tỷ đồng)":6,"Thực tế (tỷ đồng)":5.7},{"Tháng":"T8/2026","Sản phẩm":"Bóng","Kế hoạch (tỷ đồng)":4.5,"Thực tế (tỷ đồng)":4.7},{"Tháng":"T8/2026","Sản phẩm":"Phụ kiện","Kế hoạch (tỷ đồng)":2.9,"Thực tế (tỷ đồng)":3},{"Tháng":"T8/2026","Sản phẩm":"Thời trang","Kế hoạch (tỷ đồng)":2.5,"Thực tế (tỷ đồng)":2.4},{"Tháng":"T8/2026","Sản phẩm":"Vật tư","Kế hoạch (tỷ đồng)":1.5,"Thực tế (tỷ đồng)":1.5},{"Tháng":"T8/2026","Sản phẩm":"Khác","Kế hoạch (tỷ đồng)":0.7,"Thực tế (tỷ đồng)":0.7}],"chiPhi":[{"Tháng":"T6/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.45,"Nguyên nhân chênh lệch":""},{"Tháng":"T6/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.65,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T6/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T6/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.41,"Nguyên nhân chênh lệch":""},{"Tháng":"T6/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T7/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.48,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T7/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.63,"Nguyên nhân chênh lệch":""},{"Tháng":"T7/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T7/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.43,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T7/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.19,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.49,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T8/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.59,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.39,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.22,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T9/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.44,"Nguyên nhân chênh lệch":""},{"Tháng":"T9/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.61,"Nguyên nhân chênh lệch":""},{"Tháng":"T9/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T9/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.43,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T9/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T10/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.46,"Nguyên nhân chênh lệch":""},{"Tháng":"T10/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.64,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T10/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T10/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.39,"Nguyên nhân chênh lệch":""},{"Tháng":"T10/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T11/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.43,"Nguyên nhân chênh lệch":""},{"Tháng":"T11/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.66,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T11/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T11/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.39,"Nguyên nhân chênh lệch":""},{"Tháng":"T11/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T12/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.46,"Nguyên nhân chênh lệch":""},{"Tháng":"T12/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6,"Nguyên nhân chênh lệch":""},{"Tháng":"T12/2025","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T12/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.38,"Nguyên nhân chênh lệch":""},{"Tháng":"T12/2025","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T1/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.47,"Nguyên nhân chênh lệch":""},{"Tháng":"T1/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.63,"Nguyên nhân chênh lệch":""},{"Tháng":"T1/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.22,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T1/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.39,"Nguyên nhân chênh lệch":""},{"Tháng":"T1/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T2/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.48,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T2/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.59,"Nguyên nhân chênh lệch":""},{"Tháng":"T2/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.19,"Nguyên nhân chênh lệch":""},{"Tháng":"T2/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.43,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T2/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T3/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.48,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T3/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.62,"Nguyên nhân chênh lệch":""},{"Tháng":"T3/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.19,"Nguyên nhân chênh lệch":""},{"Tháng":"T3/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.39,"Nguyên nhân chênh lệch":""},{"Tháng":"T3/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T4/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.49,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T4/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.58,"Nguyên nhân chênh lệch":""},{"Tháng":"T4/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.22,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T4/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.42,"Nguyên nhân chênh lệch":""},{"Tháng":"T4/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T5/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.45,"Nguyên nhân chênh lệch":""},{"Tháng":"T5/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.62,"Nguyên nhân chênh lệch":""},{"Tháng":"T5/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.19,"Nguyên nhân chênh lệch":""},{"Tháng":"T5/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.44,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T5/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.19,"Nguyên nhân chênh lệch":""},{"Tháng":"T6/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.47,"Nguyên nhân chênh lệch":""},{"Tháng":"T6/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.61,"Nguyên nhân chênh lệch":""},{"Tháng":"T6/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.22,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T6/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.42,"Nguyên nhân chênh lệch":""},{"Tháng":"T6/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T7/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.44,"Nguyên nhân chênh lệch":""},{"Tháng":"T7/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.64,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T7/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.2,"Nguyên nhân chênh lệch":""},{"Tháng":"T7/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.38,"Nguyên nhân chênh lệch":""},{"Tháng":"T7/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.22,"Nguyên nhân chênh lệch":"Vượt ngân sách nhẹ"},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Lương bán hàng","Phòng ban":"Sales","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.45,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Marketing","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":0.6,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Khuyến mãi","Phòng ban":"MKT","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.19,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"Admin","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.41,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Thuê văn phòng","Phòng ban":"Admin","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Tài trợ","Phòng ban":"MKT","Định mức (tỷ đồng)":0.45,"Thực tế (tỷ đồng)":0.45,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Quảng cáo","Phòng ban":"Bán lẻ","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":2,"Nguyên nhân chênh lệch":"Vượt quá mức"},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Thưởng Commison","Phòng ban":"Kinh doanh","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":5,"Nguyên nhân chênh lệch":"Vượt quá mức"},{"Tháng":"T8/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Văn phòng phẩm","Phòng ban":"HCNS","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.41,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Đăng ký nhãn hiệu","Phòng ban":"HCNS","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Quảng cáo","Phòng ban":"MKT","Định mức (tỷ đồng)":0.6,"Thực tế (tỷ đồng)":2,"Nguyên nhân chênh lệch":"Vượt quá mức"},{"Tháng":"T8/2026","Phân loại":"Chi phí bán hàng","Khoản mục chi phí":"Thưởng Commison","Phòng ban":"Bán lẻ","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":5,"Nguyên nhân chênh lệch":"Vượt quá mức"},{"Tháng":"T8/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Điện nước","Phòng ban":"HCNS","Định mức (tỷ đồng)":0.4,"Thực tế (tỷ đồng)":0.41,"Nguyên nhân chênh lệch":""},{"Tháng":"T8/2026","Phân loại":"Chi phí quản lý","Khoản mục chi phí":"Lương quản lý","Phòng ban":"HCNS","Định mức (tỷ đồng)":0.2,"Thực tế (tỷ đồng)":0.21,"Nguyên nhân chênh lệch":""}]});
+  }catch(e){
+    console.error('Lỗi khi tải báo cáo:', e);
+    var u=document.getElementById('uploadScreen'), r=document.getElementById('reportScreen');
+    if(u) u.style.display='none';
+    if(r) r.style.display='block';
+  }
+});
+</script>
+</body></html>
