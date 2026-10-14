@@ -2108,7 +2108,7 @@ html[data-theme="dark"] .bctc-tree-btn:hover {
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-ghost-outline" id="btnExportAllDeptConfirm" style="font-size:0.85rem; padding:8px 14px;">Xuất tất cả (từng file)</button>
+        <button type="button" class="btn-ghost-outline" id="btnExportAllDeptConfirm" style="font-size:0.85rem; padding:8px 14px; color:#000000; font-weight:700;">Xuất tất cả (từng file)</button>
         <button type="button" id="btnExportSingleDeptConfirm" style="font-size:0.85rem; padding:8px 18px; background:var(--gold-gradient); color:#071F1A; border:none; font-weight:700; border-radius:8px; cursor:pointer;">Xuất phòng ban này</button>
       </div>
     </div>
@@ -14325,7 +14325,14 @@ if(btnExportEl){
 
 
 
-function exportDepartmentHtml(rawDeptName, initialPeriod){
+/**
+ * BÁO CÁO GIAO BAN CHUYÊN BIỆT THEO PHÒNG BAN (FACOLOS EXECUTIVE DEPARTMENT REPORT)
+ * Trình bày đúng chuẩn nhận diện Facolos và format báo cáo gốc:
+ * - Đảm bảo kết nối đủ dữ liệu đến các phòng ban, không bị lỗi, không mất dữ liệu.
+ * - Giữ nguyên format trình bày giống y hệt báo cáo gốc.
+ */
+
+function exportDepartmentHtml(rawDeptName, initialPeriod, openDirectly){
   const curRaw = (typeof RAW !== 'undefined' && RAW) ? RAW : window.RAW;
   if(!curRaw){ alert('Chưa có dữ liệu.'); return false; }
   try{
@@ -14488,7 +14495,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       });
     }
 
-    // ─── XÂY DỰNG MAP KẾ HOẠCH & THỰC TẾ CHÍNH XÁC TỪ khkd_bcqt & detail_bcqt ───
+    // Map kế hoạch & thực tế chi tiết
     const planMap = new Map();
     (curRaw.keHoachKD || []).forEach(r => {
       const d = getRowDept(r);
@@ -14497,7 +14504,6 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         const code = getRowCode(r);
         const km = getRowItem(r).toLowerCase();
         const pVal = getRowPlan(r);
-
         if(mStr && code) planMap.set(`${mStr}#code#${code}`, pVal);
         if(mStr && km) planMap.set(`${mStr}#name#${km}`, pVal);
       }
@@ -14512,7 +14518,6 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         const km = getRowItem(r).toLowerCase();
         const aVal = getRowActual(r);
         const pVal = getRowPlan(r);
-
         if(m && code){
           actMap.set(`${m}#code#${code}`, aVal);
           if(pVal && !planMap.has(`${m}#code#${code}`)) planMap.set(`${m}#code#${code}`, pVal);
@@ -14524,41 +14529,62 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       }
     });
 
-    // ─── CÂY BCQT CHUẨN TỪ getDetailTreeMeta(deptName) ───
-    const treeMeta = (typeof getDetailTreeMeta === 'function' ? getDetailTreeMeta(deptName) : []) || [];
+    // Cây BCQT tổng hợp của phòng ban
+    let treeMeta = (typeof getDetailTreeMeta === 'function' ? getDetailTreeMeta(deptName) : []) || [];
+    if(!treeMeta.length){
+      const seenKm = new Map();
+      deptBcqtRows.forEach(r => {
+        const km = getRowItem(r);
+        const code = getRowCode(r);
+        const lvl = parseInt(r['Cấp'] || r.cap) || 1;
+        if(km && !seenKm.has(km)){
+          seenKm.set(km, { code, name: km, level: lvl });
+        }
+      });
+      treeMeta = Array.from(seenKm.values());
+    }
+
     const bcqtTreeClean = treeMeta.map(node => {
       const mosData = {};
       let ytdAct = 0, ytdPlan = 0;
       deptMonths.forEach(m => {
-        let cAct = (node.code ? actMap.get(`${m}#code#${node.code}`) : undefined);
-        if(cAct === undefined && node.name) cAct = actMap.get(`${m}#name#${node.name.toLowerCase()}`);
-        if(cAct === undefined) cAct = 0;
-
-        let cPlan = (node.code ? planMap.get(`${m}#code#${node.code}`) : undefined);
-        if(cPlan === undefined && node.name) cPlan = planMap.get(`${m}#name#${node.name.toLowerCase()}`);
-        if(cPlan === undefined) cPlan = 0;
-
-        const aNum = toNum(cAct);
-        const pNum = toNum(cPlan);
-        mosData[m] = { act: aNum, plan: pNum };
-        ytdAct += aNum;
-        ytdPlan += pNum;
+        let a = 0, p = 0;
+        if(node.code){
+          if(actMap.has(`${m}#code#${node.code}`)) a = actMap.get(`${m}#code#${node.code}`);
+          if(planMap.has(`${m}#code#${node.code}`)) p = planMap.get(`${m}#code#${node.code}`);
+        }
+        if(a === 0 && node.name){
+          const nm = node.name.toLowerCase();
+          if(actMap.has(`${m}#name#${nm}`)) a = actMap.get(`${m}#name#${nm}`);
+        }
+        if(p === 0 && node.name){
+          const nm = node.name.toLowerCase();
+          if(planMap.has(`${m}#name#${nm}`)) p = planMap.get(`${m}#name#${nm}`);
+        }
+        mosData[m] = { act: toNum(a), plan: toNum(p) };
+        ytdAct += toNum(a);
+        ytdPlan += toNum(p);
       });
-
       return {
         code: node.code || '',
         name: node.name || '',
         level: parseInt(node.level) || 1,
-        parent: node.parent || null,
-        hasChildren: !!node.hasChildren,
-        isRevenue: !!node.isRevenue,
         months: mosData,
-        ytdAct: ytdAct,
-        ytdPlan: ytdPlan
+        ytdAct: Number(ytdAct.toFixed(3)),
+        ytdPlan: Number(ytdPlan.toFixed(3))
       };
     });
 
-    // Chuẩn hoá mảng hàng chi phí & nhận xét
+    // Chuẩn hoá mảng hàng dữ liệu sạch để nhúng
+    const deptBcqtClean = deptBcqtRows.map(r => ({
+      m: getRowMonth(r),
+      code: getRowCode(r),
+      km: getRowItem(r),
+      lvl: parseInt(r['Cấp'] || r.cap) || 1,
+      act: getRowActual(r),
+      plan: getRowPlan(r)
+    }));
+
     const deptCostClean = deptCostRows.map(r => ({
       m: getRowMonth(r),
       cat: getRowCat(r),
@@ -14569,14 +14595,22 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       pctDtt: toNum(r['%/DTT'])
     }));
 
+    const deptKhClean = deptKhRows.map(r => ({
+      m: getRowMonth(r),
+      code: getRowCode(r),
+      km: getRowItem(r),
+      lvl: parseInt(r['Cấp'] || r.cap) || 1,
+      plan: getRowPlan(r)
+    }));
+
     const nxClean = nxRows.map(r => ({
       m: (r.normMonth || getRowMonth(r) || 'ALL').trim(),
-      item: r.item || r['Khoản mục chi phí'] || getRowItem(r) || 'Chỉ tiêu trọng yếu',
-      cat: r.cat || r['Phân loại'] || '',
+      item: r.item || getRowItem(r) || 'Chỉ tiêu trọng yếu',
+      cat: r.cat || getRowCat(r) || '',
       budget: (r.budget !== undefined) ? toNum(r.budget) : getRowPlan(r),
       actual: (r.actual !== undefined) ? toNum(r.actual) : getRowActual(r),
       prevActual: (r.prevActual !== undefined && r.prevActual !== null) ? toNum(r.prevActual) : (toNum(r['Tháng trước (tỷ đồng)']) || null),
-      cause: r.cause || r['Phân tích & Nhận xét chuyên sâu'] || r['Phân tích nguyên nhân'] || r['Nguyên nhân chênh lệch'] || '',
+      cause: r.cause || r['Phân tích & Nhận xét chuyên sâu'] || r['Phân tích nguyên nhân'] || getRowReason(r) || '',
       action: r.action || r['Đề xuất giải pháp & Kế hoạch hành động'] || r['Đề xuất giải pháp'] || r['Giải pháp đề xuất'] || '',
       status: r.status || r['Trạng thái'] || r['Đánh giá'] || '',
       pic: r.pic || r['Người phụ trách'] || r['Phụ trách'] || ''
@@ -14585,7 +14619,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
     // Xác định kỳ xem ban đầu
     const chosenInitialPeriod = (initialPeriod && (initialPeriod === 'ALL' || deptMonths.includes(initialPeriod)))
       ? initialPeriod
-      : ((typeof selMonth !== 'undefined' && deptMonths.includes(selMonth)) ? selMonth : (deptMonths[deptMonths.length - 1] || 'ALL'));
+      : ((typeof selMonth !== 'undefined' && deptMonths.includes(selMonth)) ? selMonth : 'ALL');
 
     const payload = {
       deptName: deptName,
@@ -14595,14 +14629,16 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       months: deptMonths,
       initialPeriod: chosenInitialPeriod,
       isRevenueDept: isRevenueDept,
+      bcqtRows: deptBcqtClean,
       costRows: deptCostClean,
+      khRows: deptKhClean,
       nxRows: nxClean,
       bcqtTree: bcqtTreeClean
     };
 
     const safeJsonPayload = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
 
-    /* ─── 2. Sinh chuỗi HTML độc lập tương tác động chuẩn Facolos ─── */
+    /* ─── 2. Sinh chuỗi HTML độc lập tương tác động CHUẨN GỐC FACOLOS ─── */
     const fullHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -14622,87 +14658,77 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       --gold-dark: #B8860B;
       --bg: #F4F1EA;
       --surface: #FFFFFF;
-      --surface-card: #FFFFFF;
-      --ink: #1F2A28;
-      --ink-light: #5A6B66;
-      --muted: #7F948E;
-      --border: rgba(14, 61, 52, 0.12);
-      --border-gold: rgba(200, 161, 97, 0.35);
-      --success: #1B5E20;
-      --success-bg: #E8F5E9;
+      --surface-2: #FAF8F5;
+      --border: #DCD5C9;
+      --border-light: #EBE6DC;
+      --ink: #2F3A36;
+      --ink-light: #5C6B66;
+      --muted: #87948F;
       --danger: #9A2C2C;
-      --danger-bg: #FFEBEE;
-      --warning: #B8860B;
-      --warning-bg: #FFF8E1;
-      --shadow-sm: 0 2px 8px rgba(14, 61, 52, 0.05);
-      --shadow-md: 0 4px 18px rgba(14, 61, 52, 0.08);
-      --shadow-lg: 0 10px 30px rgba(14, 61, 52, 0.12);
+      --success: #1B5E20;
+      --warning: #B45309;
+      --shadow: 0 2px 10px rgba(7, 31, 26, 0.05);
+      --shadow-lg: 0 8px 30px rgba(7, 31, 26, 0.08);
       --radius: 10px;
+      --radius-sm: 6px;
     }
-
     body.dark {
-      --bg: #091714;
-      --surface: #0E2420;
-      --surface-card: #122E29;
-      --ink: #E8EDE9;
-      --ink-light: #B2C2BE;
-      --muted: #7A918B;
-      --border: rgba(200, 161, 97, 0.18);
-      --border-gold: rgba(200, 161, 97, 0.45);
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
-      --shadow-md: 0 4px 18px rgba(0,0,0,0.5);
-      --shadow-lg: 0 10px 30px rgba(0,0,0,0.65);
+      --brand: #1C5A4E;
+      --brand-dark: #051411;
+      --gold: #D6B275;
+      --gold-bright: #F0D59E;
+      --bg: #121816;
+      --surface: #1A2421;
+      --surface-2: #212E2A;
+      --border: #2D3E38;
+      --border-light: #374B44;
+      --ink: #E0E7E4;
+      --ink-light: #A3B5AE;
+      --muted: #6E827B;
+      --shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin:0; padding:0; }
     body {
-      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--ink);
-      line-height: 1.5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.55;
+      font-size: 13.5px;
+      font-weight: 500;
       -webkit-font-smoothing: antialiased;
-      transition: background 0.3s ease, color 0.3s ease;
+      transition: background 0.3s, color 0.3s;
     }
-
     h1, h2, h3, h4, .serif-font { font-family: 'Playfair Display', serif; letter-spacing: -0.01em; }
 
-    /* ===== TOPBAR VỚI LOGO FACOLOS CHUẨN ===== */
+    /* ===== TOPBAR GIỐNG BÁO CÁO GỐC ===== */
     .topbar {
       background: linear-gradient(180deg, #071F1A 0%, #0E3D34 100%);
-      color: #FFFFFF;
-      padding: 14px clamp(18px, 3vw, 36px);
+      border-bottom: 1px solid rgba(200,161,97,0.35);
+      padding: 12px clamp(18px, 3vw, 36px);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       gap: 16px;
-      flex-wrap: wrap;
-      border-bottom: 2px solid var(--gold);
-      box-shadow: 0 4px 20px rgba(7, 31, 26, 0.45);
+      color: #fff;
     }
     .topbar-left {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
     .brand-mark {
-      width: 44px;
-      height: 44px;
-      background: linear-gradient(145deg, #123B2E, #071F1A);
-      border: 1.5px solid var(--gold);
-      border-radius: 10px;
+      width: 38px;
+      height: 38px;
+      background: rgba(200,161,97,0.15);
+      border: 1px solid rgba(200,161,97,0.4);
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 6px;
-      box-sizing: border-box;
-      box-shadow: inset 0 0 8px rgba(200, 161, 97, 0.25);
-      flex-shrink: 0;
-    }
-    .brand-mark img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
+      color: var(--gold-bright);
+      font-weight: 800;
+      font-size: 18px;
+      font-family: 'Playfair Display', serif;
     }
     .brand-text {
       font-size: 11px;
@@ -14748,11 +14774,11 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
     /* ===== CONTROLBAR GIỐNG BÁO CÁO GỐC ===== */
     .controlbar {
       background: #091E1A;
-      height: 52px;
+      height: 50px;
       padding: 0 clamp(18px, 3vw, 36px);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       border-bottom: 1px solid rgba(200,161,97,0.28);
       position: sticky;
       top: 0;
@@ -14765,17 +14791,17 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      height: 36px;
+      height: 34px;
       box-sizing: border-box;
-      background: rgba(200,161,97,0.12);
-      border: 1px solid rgba(200,161,97,0.42);
+      background: rgba(200,161,97,0.1);
+      border: 1px solid rgba(200,161,97,0.38);
       border-radius: 7px;
-      padding: 3px 10px 3px 10px;
+      padding: 3px 8px 3px 10px;
       transition: all 0.2s ease;
       box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
     }
     .filter-item:hover, .filter-item:focus-within {
-      background: rgba(200,161,97,0.22);
+      background: rgba(200,161,97,0.18);
       border-color: var(--gold-bright);
     }
     .filter-item label {
@@ -14798,7 +14824,6 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       cursor: pointer;
       outline: none;
       appearance: none;
-      min-width: 75px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23E5C17C' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 2px center;
@@ -14827,120 +14852,127 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      transition: all 0.15s ease;
+      font-size: 11px;
+      transition: all 0.2s ease;
     }
     .nav-arrow-btn:hover {
-      background: var(--gold);
-      color: #071F1A;
+      background: rgba(200,161,97,0.22);
       border-color: var(--gold-bright);
+      transform: translateY(-1px);
     }
 
     .period-status-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(200,161,97,0.1);
+      gap: 7px;
+      height: 32px;
+      background: rgba(0,0,0,0.3);
       border: 1px solid rgba(200,161,97,0.25);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 12px;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      color: rgba(255,255,255,0.9);
       font-weight: 600;
-      color: var(--gold-bright);
+      white-space: nowrap;
     }
     .period-status-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #10B981;
-      box-shadow: 0 0 6px rgba(16,185,129,0.7);
+      background: #2ECC71;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(46,204,113,0.6);
     }
+
     .control-spacer { flex: 1; }
 
     .dark-toggle {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(200,161,97,0.1);
-      border: 1px solid rgba(200,161,97,0.3);
-      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 7px;
+      border: 1px solid rgba(200,161,97,0.4);
+      background: rgba(200,161,97,0.08);
+      flex-shrink: 0;
       transition: all 0.2s ease;
-    }
-    .dark-toggle:hover {
-      background: rgba(200,161,97,0.25);
-      border-color: var(--gold);
-    }
-    .dark-toggle::before {
-      content: '☀';
-      color: var(--gold-bright);
       font-size: 14px;
     }
-    body.dark .dark-toggle::before {
-      content: '☾';
-      color: var(--gold-bright);
+    .dark-toggle::before { content:'☀'; color: rgba(229,193,124,0.9); line-height:1; }
+    body.dark .dark-toggle::before { content:'🌙'; font-size:13px; }
+    .dark-toggle:hover {
+      background: rgba(200,161,97,0.2);
+      border-color: var(--gold-bright);
+      transform: translateY(-1px);
     }
 
     .btn-ghost {
-      background: rgba(200,161,97,0.12);
-      border: 1px solid var(--gold);
-      color: var(--gold-bright);
+      font-family: inherit;
       font-size: 12px;
       font-weight: 700;
-      padding: 6px 14px;
-      border-radius: 6px;
+      color: #071F1A;
+      background: linear-gradient(135deg, #E5C17C 0%, #C8A161 100%);
+      border: 1px solid #E5C17C;
+      height: 34px;
+      box-sizing: border-box;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
+      white-space: nowrap;
+      border-radius: 7px;
       transition: all 0.2s ease;
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     }
     .btn-ghost:hover {
-      background: var(--gold);
-      color: #071F1A;
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(229,193,124,0.3);
     }
 
-    /* ===== CONTAINER & TABS ===== */
+    /* Container & Tabs */
     .container {
-      max-width: 1440px;
+      max-width: 1260px;
       margin: 0 auto;
-      padding: 24px clamp(16px, 2.5vw, 32px);
+      padding: 22px 20px 80px;
     }
-
     .tab-nav {
       display: flex;
       gap: 8px;
-      border-bottom: 2px solid rgba(14, 61, 52, 0.12);
-      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 22px;
       overflow-x: auto;
       padding-bottom: 2px;
-    }
-    body.dark .tab-nav {
-      border-bottom-color: rgba(200, 161, 97, 0.2);
     }
     .tab-btn {
       background: transparent;
       border: none;
-      padding: 10px 18px;
-      font-size: 13.5px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
       font-weight: 600;
-      color: var(--muted);
+      color: var(--ink-light);
       cursor: pointer;
-      border-radius: 6px 6px 0 0;
-      position: relative;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
       white-space: nowrap;
-      transition: all 0.2s ease;
+      position: relative;
+      font-family: inherit;
     }
-    .tab-btn:hover { color: var(--brand); }
-    body.dark .tab-btn:hover { color: var(--gold-bright); }
+    .tab-btn:hover { color: var(--brand); background: rgba(0,0,0,0.03); }
     .tab-btn.active {
       color: var(--brand);
+      background: var(--surface);
       font-weight: 700;
-      background: rgba(14, 61, 52, 0.05);
     }
-    body.dark .tab-btn.active {
-      color: var(--gold-bright);
-      background: rgba(200, 161, 97, 0.1);
-    }
+    body.dark .tab-btn.active { color: var(--gold-bright); }
     .tab-btn.active::after {
       content: '';
       position: absolute;
@@ -14952,350 +14984,252 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       border-radius: 3px 3px 0 0;
     }
     body.dark .tab-btn.active::after { background: var(--gold); }
-
     .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ===== KPI CARDS GRID ===== */
+    /* KPI Grid & Cards */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
     .kpi-card {
-      background: var(--surface-card);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px 20px;
-      box-shadow: var(--shadow-sm);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: var(--border-gold);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
     .kpi-card.highlight {
-      border-top: 3px solid var(--gold);
+      border-left: 4px solid var(--gold);
+      background: linear-gradient(to bottom right, var(--surface), var(--surface-2));
     }
-    .kpi-label {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
+    .kpi-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-light); }
     .kpi-value {
-      font-family: 'Playfair Display', serif;
-      font-size: 28px;
-      font-weight: 700;
+      font-size: 1.95rem;
+      font-weight: 800;
       color: var(--brand);
-      line-height: 1.2;
-      margin-bottom: 6px;
-    }
-    body.dark .kpi-value { color: var(--gold-bright); }
-    .kpi-value .unit { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 2px; }
-    .kpi-sub {
-      font-size: 12.5px;
-      color: var(--ink-light);
-      margin-bottom: 8px;
-    }
-    .kpi-footer {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 11.5px;
-      padding-top: 8px;
-      border-top: 1px dashed var(--border);
-    }
-    .kpi-footer .diff {
-      font-weight: 700;
+      margin: 6px 0;
       font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
     }
+    body.dark .kpi-value { color: #EDEAE1; }
+    .kpi-value .unit { font-size: 0.9rem; font-weight: 600; color: var(--muted); margin-left: 3px; }
+    .kpi-sub { font-size: 0.82rem; color: var(--ink-light); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+    .kpi-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-light); padding-top: 10px; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+    .kpi-footer .diff { font-weight: 700; }
     .kpi-footer .diff.pos { color: var(--success); }
     .kpi-footer .diff.neg { color: var(--danger); }
 
-    /* ===== CHARTS ROW ===== */
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .badge-success { background: #E8F5E9; color: #1B5E20; }
+    .badge-danger { background: #FFEBEE; color: #B71C1C; }
+    .badge-warning { background: #FFF8E1; color: #B78103; }
+    .badge-brand { background: var(--brand); color: #fff; }
+    .badge-neutral { background: var(--surface-2); color: var(--ink-light); border: 1px solid var(--border); }
+    body.dark .badge-success { background: rgba(27,94,32,0.3); color: #81C784; }
+    body.dark .badge-danger { background: rgba(183,28,28,0.3); color: #E57373; }
+    body.dark .badge-warning { background: rgba(183,129,3,0.3); color: #FFD54F; }
+
+    /* Charts Row */
     .charts-row {
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 20px;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
       margin-bottom: 24px;
     }
-    @media (max-width: 992px){
-      .charts-row { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 900px){ .charts-row { grid-template-columns: 1fr; } }
     .card {
-      background: var(--surface-card);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow);
       overflow: hidden;
       margin-bottom: 20px;
     }
     .card-header {
-      padding: 14px 20px;
-      background: rgba(14, 61, 52, 0.03);
-      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-light);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: var(--surface-2);
     }
-    body.dark .card-header { background: rgba(0,0,0,0.2); }
-    .card-header h3 {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--brand);
-    }
+    .card-header h3 { font-size: 0.98rem; font-weight: 700; color: var(--brand); }
     body.dark .card-header h3 { color: var(--gold-bright); }
-    .card-body { padding: 18px 20px; }
-    .chart-container {
-      position: relative;
-      height: 280px;
-      width: 100%;
-    }
+    .card-body { padding: 18px; }
+    .chart-container { position: relative; height: 290px; width: 100%; }
 
-    /* ===== TABLES ===== */
-    .table-wrap { overflow-x: auto; width: 100%; }
-    table.data-table {
+    /* Tables */
+    .table-wrap { overflow-x: auto; }
+    .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
       text-align: left;
+      font-size: 0.85rem;
     }
-    table.data-table th {
-      background: rgba(14, 61, 52, 0.04);
-      color: var(--brand);
+    .data-table th {
+      background: var(--surface-2);
+      color: var(--ink-light);
       font-weight: 700;
-      font-size: 11.5px;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-size: 0.73rem;
+      letter-spacing: 0.05em;
       padding: 10px 14px;
-      border-bottom: 2px solid var(--border);
-      white-space: nowrap;
-    }
-    body.dark table.data-table th {
-      background: rgba(0,0,0,0.3);
-      color: var(--gold-bright);
-    }
-    table.data-table td {
-      padding: 9px 14px;
       border-bottom: 1px solid var(--border);
-      color: var(--ink);
-    }
-    table.data-table tr:hover td {
-      background: rgba(200, 161, 97, 0.05);
-    }
-    .num { text-align: right; font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .font-semibold { font-weight: 600; }
-    .text-success { color: var(--success); }
-    .text-danger { color: var(--danger); }
-
-    /* ===== BADGES ===== */
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 700;
       white-space: nowrap;
     }
-    .badge-success { background: var(--success-bg); color: var(--success); }
-    .badge-danger { background: var(--danger-bg); color: var(--danger); }
-    .badge-warning { background: var(--warning-bg); color: var(--warning); }
-    .badge-neutral { background: rgba(0,0,0,0.06); color: var(--muted); }
-    .badge-brand { background: rgba(14,61,52,0.1); color: var(--brand); }
-    body.dark .badge-brand { background: rgba(200,161,97,0.2); color: var(--gold-bright); }
+    .data-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-light);
+      font-variant-numeric: tabular-nums;
+    }
+    .data-table tr:hover td { background: rgba(200,161,97,0.06); }
+    .data-table td.num { text-align: right; font-family: 'Inter', sans-serif; }
+    .data-table td.font-semibold { font-weight: 600; }
+    .data-table tr.row-bold td { font-weight: 700; background: rgba(0,0,0,0.02); }
+    body.dark .data-table tr.row-bold td { background: rgba(255,255,255,0.02); }
+    .text-right { text-align: right !important; }
+    .text-center { text-align: center !important; }
+    .text-success { color: var(--success); font-weight: 600; }
+    .text-danger { color: var(--danger); font-weight: 600; }
 
-    /* ===== BCQT TREE TABLE ===== */
-    .bcqt-toolbar {
+    /* Tree BCQT */
+    .tree-l1 td { font-weight: 800; background: var(--surface-2); }
+    .tree-l2 td { font-weight: 600; }
+    .tree-l3 td { color: var(--ink-light); font-size: 0.82rem; }
+    .col-highlight { background: rgba(200,161,97,0.12) !important; font-weight: 700; }
+
+    /* Cost Category Cards */
+    .cost-cat-card { margin-bottom: 16px; border: 1px solid var(--border); border-radius: var(--radius); }
+    .cat-header {
+      padding: 12px 18px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border-light);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
       flex-wrap: wrap;
+      gap: 8px;
     }
-    .bcqt-search-input {
-      padding: 7px 14px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--ink);
-      font-size: 13px;
-      width: 260px;
-    }
-    .pill-group {
-      display: inline-flex;
-      background: rgba(0,0,0,0.05);
-      border-radius: 6px;
-      padding: 2px;
-      gap: 2px;
-    }
-    body.dark .pill-group { background: rgba(0,0,0,0.3); }
-    .pill-btn {
-      border: none;
-      background: transparent;
-      padding: 5px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .pill-btn.active, .pill-btn:hover {
-      background: var(--surface);
-      color: var(--brand);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    body.dark .pill-btn.active {
-      background: var(--surface-card);
-      color: var(--gold-bright);
-    }
-    .tree-toggle-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      margin-right: 6px;
-      font-size: 10px;
-      color: var(--muted);
-      border-radius: 3px;
-    }
-    .tree-toggle-btn:hover {
-      background: rgba(200, 161, 97, 0.2);
-      color: var(--brand);
-    }
-    .tree-l1 td {
-      font-weight: 700;
-      background: rgba(14, 61, 52, 0.05);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      color: var(--brand);
-    }
-    body.dark .tree-l1 td {
-      background: rgba(200, 161, 97, 0.08);
-      color: var(--gold-bright);
-    }
-    .tree-l2 td {
-      font-weight: 600;
-      background: rgba(0,0,0,0.015);
-    }
-    .tree-l3 td {
-      font-weight: 400;
-      color: var(--ink-light);
-    }
-    .col-highlight {
-      background: rgba(200, 161, 97, 0.08) !important;
-      font-weight: 700;
-    }
+    .cat-title { font-weight: 700; font-size: 0.95rem; color: var(--brand); }
+    body.dark .cat-title { color: var(--gold-bright); }
+    .cat-count { font-size: 0.8rem; color: var(--muted); margin-left: 6px; font-weight: 500; }
+    .cat-summary { display: flex; align-items: center; gap: 14px; font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+    .cost-overrun td { background: rgba(154,44,44,0.04); }
 
-    /* ===== NHẬN XÉT CARDS ===== */
+    /* Executive Notes & Insights */
     .nx-detail-panel {
-      background: var(--surface-card);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px 22px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow-sm);
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
     }
     .nx-panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      border-bottom: 1px dashed var(--border);
-      padding-bottom: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
-    .nx-item-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--brand);
-    }
+    .nx-item-title { font-size: 1.15rem; font-weight: 700; color: var(--brand); font-family: 'Playfair Display', serif; }
     body.dark .nx-item-title { color: var(--gold-bright); }
     .nx-stats-strip {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      background: rgba(14, 61, 52, 0.03);
-      padding: 10px 16px;
-      border-radius: 6px;
-      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      font-size: 0.85rem;
     }
-    body.dark .nx-stats-strip { background: rgba(0,0,0,0.25); }
-    .nx-stat-col .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 600; }
-    .nx-stat-col .val { font-size: 14px; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .nx-stat-col .lbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .nx-stat-col .val { font-size: 1.05rem; font-weight: 800; color: var(--ink); margin-top: 2px; }
     .nx-insights-box-full {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
-    @media (max-width: 768px){
-      .nx-insights-box-full { grid-template-columns: 1fr; }
+    @media (max-width: 768px){ .nx-insights-box-full { grid-template-columns: 1fr; } }
+    .nx-cause-card-large {
+      background: rgba(154,44,44,0.03);
+      border: 1px solid rgba(154,44,44,0.18);
+      border-radius: 8px;
+      padding: 16px;
     }
-    .nx-cause-card-large, .nx-action-card-large {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px 14px;
+    .nx-action-card-large {
+      background: rgba(27,94,32,0.03);
+      border: 1px solid rgba(27,94,32,0.18);
+      border-radius: 8px;
+      padding: 16px;
     }
-    .nx-box-heading-large {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      margin-bottom: 6px;
-    }
-    .nx-box-text-large { font-size: 13px; color: var(--ink); line-height: 1.55; }
+    .nx-box-heading-large { font-weight: 700; font-size: 0.88rem; margin-bottom: 8px; }
+    .nx-cause-card-large .nx-box-heading-large { color: var(--danger); }
+    .nx-action-card-large .nx-box-heading-large { color: var(--success); }
+    .nx-box-text-large { font-size: 0.85rem; line-height: 1.6; color: var(--ink); }
+    .nx-box-text-large p { margin-bottom: 6px; }
+    .nx-box-text-large p:last-child { margin-bottom: 0; }
     .nx-owner-bar {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
-      color: var(--muted);
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border-light);
+      padding-top: 12px;
+      font-size: 0.82rem;
+      color: var(--ink-light);
     }
-    .nx-owner-tag { color: var(--brand); font-weight: 600; }
-    body.dark .nx-owner-tag { color: var(--gold-bright); }
+    .nx-owner-tag { color: var(--brand); font-weight: 700; }
 
     /* Footer */
     .footer {
       text-align: center;
-      padding: 30px 0 20px;
-      font-size: 12px;
+      padding: 30px 20px;
       color: var(--muted);
+      font-size: 0.8rem;
       border-top: 1px solid var(--border);
+      background: var(--surface);
       margin-top: 40px;
     }
 
     @media print {
-      .controlbar, .tab-nav, .bcqt-toolbar, .btn-ghost, .dark-toggle { display: none !important; }
-      body { background: #FFFFFF !important; color: #000000 !important; }
-      .tab-content { display: block !important; page-break-after: always; }
+      .controlbar, .tab-nav { display: none !important; }
+      body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+      .container { max-width: 100% !important; padding: 0 !important; }
+      .tab-content { display: block !important; margin-bottom: 24pt; page-break-inside: avoid; }
       .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+      .chart-container { height: 220px !important; }
     }
   </style>
 </head>
 <body>
-  <!-- TOPBAR -->
+
+  <!-- TOPBAR BANNER -->
   <header class="topbar">
     <div class="topbar-left">
-      <div class="brand-mark">
-        <img src="data:image/png;base64,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" alt="Facolos">
-      </div>
+      <div class="brand-mark">F</div>
       <div class="brand-text">
         <b>${escapeHtml(companyName)}</b>
         Báo cáo giao ban nội bộ
@@ -15310,15 +15244,19 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
     </div>
   </header>
 
-  <!-- CONTROLBAR (THANH ĐIỀU KHIỂN CHỌN KỲ/THÁNG) -->
+  <!-- CONTROLBAR (CHUẨN FORM & STYLE BÁO CÁO GỐC) -->
   <div class="controlbar">
     <div class="filter-item">
       <label>Năm</label>
-      <select id="yearSelect" onchange="onYearChange(this.value)"></select>
+      <select id="yearSelect" onchange="onYearChange(this.value)">
+        <!-- Được sinh tự động bởi Javascript -->
+      </select>
     </div>
     <div class="filter-item">
       <label>Tháng</label>
-      <select id="monthSelect" onchange="onPeriodChange(this.value)"></select>
+      <select id="monthSelect" onchange="onPeriodChange(this.value)">
+        <!-- Được sinh tự động bởi Javascript -->
+      </select>
     </div>
     <div class="period-nav-group">
       <button type="button" class="nav-arrow-btn" id="btnPrevMo" onclick="stepPeriod(-1)" title="Tháng trước">◀</button>
@@ -15334,6 +15272,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
   </div>
 
   <main class="container">
+    
     <!-- TABS NAVIGATION -->
     <nav class="tab-nav">
       <button class="tab-btn active" onclick="switchDeptTab('tab-overview', this)">Tổng quan &amp; KPI</button>
@@ -15348,6 +15287,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       <div class="kpi-grid" id="kpiGridContainer"></div>
 
       <div class="charts-row">
+        <!-- Biểu đồ diễn biến qua các tháng -->
         <div class="card">
           <div class="card-header">
             <h3>Diễn biến Thực hiện vs Kế hoạch qua các tháng</h3>
@@ -15360,6 +15300,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
           </div>
         </div>
 
+        <!-- Biểu đồ cơ cấu chi phí -->
         <div class="card">
           <div class="card-header">
             <h3>Cơ cấu Chi phí phòng ban</h3>
@@ -15373,8 +15314,8 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         </div>
       </div>
 
-      <!-- Bảng Top 5 khoản mục vượt định mức cao nhất -->
-      <div class="card">
+      <!-- Bảng Top 5 vượt định mức -->
+      <div class="card table-card">
         <div class="card-header">
           <h3>Top 5 Khoản mục vượt định mức / ngân sách cao nhất</h3>
           <span class="badge badge-danger">Trọng yếu</span>
@@ -15420,29 +15361,8 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       <div id="costTablesContainer"></div>
     </section>
 
-    <!-- TAB 4: CHI TIẾT BCQT (CHUẨN BÁO CÁO QUẢN TRỊ CỦA BỘ PHẬN) -->
+    <!-- TAB 4: CHI TIẾT BCQT -->
     <section id="tab-bcqt" class="tab-content">
-      <div class="bcqt-toolbar">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <input type="text" id="bcqtSearchInput" class="bcqt-search-input" placeholder="Tìm kiếm chỉ tiêu (mã, tên)..." oninput="onBcqtSearch(this.value)">
-          <div class="pill-group">
-            <button type="button" class="pill-btn active" id="btnLvlAll" onclick="setBcqtLevel('ALL', this)">Tất cả</button>
-            <button type="button" class="pill-btn" id="btnLvl1" onclick="setBcqtLevel('1', this)">Cấp 1</button>
-            <button type="button" class="pill-btn" id="btnLvl2" onclick="setBcqtLevel('2', this)">Cấp 2</button>
-            <button type="button" class="pill-btn" id="btnLvl3" onclick="setBcqtLevel('3', this)">Cấp 3</button>
-          </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <div class="pill-group">
-            <button type="button" class="pill-btn active" id="btnModeFocus" onclick="setBcqtMode('focus', this)">Tiêu điểm (MTD &amp; YTD)</button>
-            <button type="button" class="pill-btn" id="btnModeAllMonths" onclick="setBcqtMode('all_months', this)">Tất cả các tháng</button>
-          </div>
-          <div class="pill-group">
-            <button type="button" class="pill-btn" onclick="toggleBcqtExpandAll(true)">[+] Mở rộng</button>
-            <button type="button" class="pill-btn" onclick="toggleBcqtExpandAll(false)">[-] Thu gọn</button>
-          </div>
-        </div>
-      </div>
       <div id="bcqtTableContainer"></div>
     </section>
 
@@ -15468,10 +15388,6 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
     let trendChartInstance = null;
     let doughnutChartInstance = null;
     let currentPeriod = DATA.initialPeriod || 'ALL';
-    let bcqtLevelFilter = 'ALL';
-    let bcqtSearchQuery = '';
-    let bcqtViewMode = 'focus'; // 'focus' | 'all_months'
-    let bcqtCollapsedNodes = new Set();
 
     function fmtN(v, dp){
       if(v === null || v === undefined || isNaN(v) || v === '') return '—';
@@ -15498,7 +15414,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
     }
 
     function switchDeptTab(tabId, btn){
-      document.querySelectorAll('.tab-nav .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
       const target = document.getElementById(tabId);
@@ -15511,95 +15427,44 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         localStorage.setItem('facolos_dept_dark', document.body.classList.contains('dark') ? '1' : '0');
       } catch(e){}
     }
-    try {
-      if(window.localStorage && localStorage.getItem('facolos_dept_dark') === '1'){
-        document.body.classList.add('dark');
-      }
-    } catch(e){}
+    if(localStorage.getItem('facolos_dept_dark') === '1'){
+      document.body.classList.add('dark');
+    }
 
     function getPeriodLabel(period){
-      if(!period || period === 'ALL') return 'Toàn kỳ';
+      if(period === 'ALL'){
+        if(!DATA.months || DATA.months.length === 0) return 'Toàn kỳ';
+        if(DATA.months.length === 1) return DATA.months[0];
+        return DATA.months[0] + ' — ' + DATA.months[DATA.months.length - 1] + ' (' + DATA.months.length + ' tháng)';
+      }
       return 'Tháng ' + period;
     }
 
-    function onPeriodChange(val){
-      currentPeriod = val;
-      renderPeriod(currentPeriod);
+    function stepPeriod(delta){
+      const opts = ['ALL', ...DATA.months];
+      const curIdx = opts.indexOf(currentPeriod);
+      let nextIdx = curIdx + delta;
+      if(nextIdx < 0) nextIdx = opts.length - 1;
+      if(nextIdx >= opts.length) nextIdx = 0;
+      onPeriodChange(opts[nextIdx]);
     }
 
     function onYearChange(val){
       const mSel = document.getElementById('monthSelect');
-      if(!mSel) return;
-      const filtered = DATA.months.filter(m => m.includes(val));
-      if(filtered.length > 0){
-        currentPeriod = filtered[filtered.length - 1];
-        mSel.value = currentPeriod;
-        renderPeriod(currentPeriod);
+      if(mSel){
+        mSel.value = 'ALL';
+        onPeriodChange('ALL');
       }
     }
 
-    function stepPeriod(delta){
+    function onPeriodChange(newPeriod){
+      currentPeriod = newPeriod;
       const mSel = document.getElementById('monthSelect');
-      if(!mSel) return;
-      const opts = Array.from(mSel.options).map(o => o.value);
-      let idx = opts.indexOf(currentPeriod);
-      if(idx === -1) idx = 0;
-      let nextIdx = idx + delta;
-      if(nextIdx >= 0 && nextIdx < opts.length){
-        mSel.value = opts[nextIdx];
-        onPeriodChange(opts[nextIdx]);
-      }
-    }
-
-    function setBcqtLevel(lvl, btn){
-      bcqtLevelFilter = lvl;
-      document.querySelectorAll('#tab-bcqt .pill-btn[id^="btnLvl"]').forEach(b => b.classList.remove('active'));
-      if(btn) btn.classList.add('active');
-      renderBcqtTable();
-    }
-
-    function setBcqtMode(mode, btn){
-      bcqtViewMode = mode;
-      document.querySelectorAll('#tab-bcqt .pill-btn[id^="btnMode"]').forEach(b => b.classList.remove('active'));
-      if(btn) btn.classList.add('active');
-      renderBcqtTable();
-    }
-
-    function onBcqtSearch(q){
-      bcqtSearchQuery = (q || '').trim().toLowerCase();
-      renderBcqtTable();
-    }
-
-    function toggleBcqtNode(code){
-      if(bcqtCollapsedNodes.has(code)){
-        bcqtCollapsedNodes.delete(code);
-      } else {
-        bcqtCollapsedNodes.add(code);
-      }
-      renderBcqtTable();
-    }
-
-    function toggleBcqtExpandAll(expand){
-      if(expand){
-        bcqtCollapsedNodes.clear();
-      } else {
-        (DATA.bcqtTree || []).forEach(n => {
-          if(n.hasChildren) bcqtCollapsedNodes.add(n.code);
-        });
-      }
-      renderBcqtTable();
-    }
-
-    // ─── TÍNH TOÁN METRIC TỪ CÂY BCQT (KH & THỰC TẾ) ───
-    function getNodeMetric(targetCode, targetNameSub, period){
-      const node = (DATA.bcqtTree || []).find(n => n.code === String(targetCode) || (targetNameSub && n.name.toLowerCase().includes(targetNameSub.toLowerCase())));
-      if(!node) return { act: 0, plan: 0 };
-      if(period === 'ALL'){
-        return { act: node.ytdAct || 0, plan: node.ytdPlan || 0 };
-      } else {
-        const mData = node.months && node.months[period] ? node.months[period] : { act:0, plan:0 };
-        return { act: mData.act || 0, plan: mData.plan || 0 };
-      }
+      if(mSel) mSel.value = newPeriod;
+      try {
+        window.location.hash = newPeriod;
+      } catch(e){}
+      renderPeriod(newPeriod);
     }
 
     function renderPeriod(period){
@@ -15628,99 +15493,96 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       const nxSub = document.getElementById('nxDetailSubtitle');
       if(nxSub) nxSub.textContent = 'Chi tiết phân tích nguyên nhân và các đề xuất giải pháp giao ban cho phòng ban ' + DATA.deptName + ' (' + periodLabel + ').';
 
-      // Lọc dữ liệu chi phí và nhận xét
+      // 1. Lọc dữ liệu theo kỳ
+      const curBcqt = isAll ? DATA.bcqtRows : DATA.bcqtRows.filter(r => r.m === period);
       const curCost = isAll ? DATA.costRows : DATA.costRows.filter(r => r.m === period);
+      const curKh = isAll ? DATA.khRows : DATA.khRows.filter(r => r.m === period);
       const curNx = isAll ? DATA.nxRows : DATA.nxRows.filter(r => r.m === period || r.m === 'ALL');
 
-      // ─── TÍNH TOÁN KPI CHUẨN XÁC THEO KH VÀ THỰC TẾ ───
-      const dttMetric = getNodeMetric('3', 'doanh thu thuần', period);
-      const cpbhMetric = getNodeMetric('8', 'chi phí bán hàng', period);
-      const lngMetric = getNodeMetric('5', 'lợi nhuận gộp', period);
-      const gvMetric = getNodeMetric('4', 'giá vốn', period);
-
-      let revActual = dttMetric.act;
-      let revPlan = dttMetric.plan;
-
-      let cpbhActual = cpbhMetric.act;
-      let cpbhPlan = cpbhMetric.plan;
-
-      let totalCostActual = 0, totalCostBudget = 0;
-      curCost.forEach(r => {
-        totalCostActual += (r.act || 0);
-        totalCostBudget += (r.bud || 0);
-      });
-
-      if(cpbhActual === 0 && cpbhPlan === 0 && !DATA.isRevenueDept){
-        cpbhActual = totalCostActual;
-        cpbhPlan = totalCostBudget;
+      // 2. Tính toán Doanh thu, Chi phí, Định mức
+      let revActual = 0, revPlan = 0;
+      if(DATA.isRevenueDept){
+        curBcqt.forEach(r => {
+          const km = (r.km||'').toLowerCase();
+          if(r.lvl === 1 && km.includes('doanh thu')){
+            revActual += (r.act || 0);
+            revPlan += (r.plan || 0);
+          }
+        });
+        if(revPlan === 0){
+          curKh.forEach(r => {
+            const km = (r.km||'').toLowerCase();
+            if(r.lvl === 1 && km.includes('doanh thu')){
+              revPlan += (r.plan || 0);
+            }
+          });
+        }
       }
 
+      let costActual = 0, costBudget = 0;
+      curCost.forEach(r => {
+        costActual += (r.act || 0);
+        costBudget += (r.bud || 0);
+      });
+
+      const costDiff = costActual - costBudget;
+      const costRate = costBudget > 0 ? (costActual / costBudget * 100) : null;
       const revDiff = revActual - revPlan;
-      const cpbhDiff = cpbhActual - cpbhPlan;
-      const lngActual = lngMetric.act;
-      const lngPlan = lngMetric.plan;
-      const lngDiff = lngActual - lngPlan;
+      const dttRateActual = revActual > 0 ? (costActual / revActual * 100) : null;
+      const dttRatePlan = revPlan > 0 ? (costBudget / revPlan * 100) : null;
 
-      const cpbhRateActual = revActual > 0 ? (cpbhActual / revActual * 100) : null;
-      const cpbhRatePlan = revPlan > 0 ? (cpbhPlan / revPlan * 100) : null;
-      const grossMarginActual = revActual > 0 ? (lngActual / revActual * 100) : null;
-
-      // ─── RENDER KPI GRID ───
+      // 3. Render KPI Grid
       let kpiHtml = '';
       if(DATA.isRevenueDept){
-        // Card 1: Doanh thu thuần
         kpiHtml += '<div class="kpi-card highlight">';
-        kpiHtml += '  <div class="kpi-label">Doanh thu thuần (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
+        kpiHtml += '  <div class="kpi-label">Doanh thu Thực hiện (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
         kpiHtml += '  <div class="kpi-value">' + fmtN(revActual) + ' <span class="unit">tỷ</span></div>';
         kpiHtml += '  <div class="kpi-sub">Kế hoạch: <b>' + fmtN(revPlan) + ' tỷ</b></div>';
         kpiHtml += '  <div class="kpi-footer">' + pctBadge(revActual, revPlan, true) + ' <span class="diff ' + (revDiff>=0?'pos':'neg') + '">' + (revDiff>=0?'+':'') + fmtN(revDiff) + ' tỷ</span></div>';
         kpiHtml += '</div>';
 
-        // Card 2: Chi phí bán hàng
         kpiHtml += '<div class="kpi-card">';
-        kpiHtml += '  <div class="kpi-label">Chi phí bán hàng (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
-        kpiHtml += '  <div class="kpi-value">' + fmtN(cpbhActual) + ' <span class="unit">tỷ</span></div>';
-        kpiHtml += '  <div class="kpi-sub">Kế hoạch: <b>' + fmtN(cpbhPlan) + ' tỷ</b></div>';
-        kpiHtml += '  <div class="kpi-footer">' + pctBadge(cpbhActual, cpbhPlan, false) + ' <span class="diff ' + (cpbhDiff<=0?'pos':'neg') + '">' + (cpbhDiff<=0?'Tiết kiệm ':'Vượt +') + fmtN(Math.abs(cpbhDiff)) + ' tỷ</span></div>';
+        kpiHtml += '  <div class="kpi-label">Chi phí Hoạt động (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
+        kpiHtml += '  <div class="kpi-value">' + fmtN(costActual) + ' <span class="unit">tỷ</span></div>';
+        kpiHtml += '  <div class="kpi-sub">Định mức: <b>' + fmtN(costBudget) + ' tỷ</b></div>';
+        kpiHtml += '  <div class="kpi-footer">' + pctBadge(costActual, costBudget, false) + ' <span class="diff ' + (costDiff<=0?'pos':'neg') + '">' + (costDiff<=0?'Tiết kiệm ':'Vượt +') + fmtN(Math.abs(costDiff)) + ' tỷ</span></div>';
         kpiHtml += '</div>';
 
-        // Card 3: Tỷ lệ CPBH / DTT
         kpiHtml += '<div class="kpi-card">';
-        kpiHtml += '  <div class="kpi-label">Tỷ lệ CPBH / DTT (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
-        kpiHtml += '  <div class="kpi-value">' + (cpbhRateActual !== null ? cpbhRateActual.toFixed(1) + '<span class="unit">%</span>' : '—') + '</div>';
-        kpiHtml += '  <div class="kpi-sub">Định mức KH: <b>' + (cpbhRatePlan !== null ? cpbhRatePlan.toFixed(1) + '%' : '—') + '</b></div>';
-        const cpbhRateDiff = (cpbhRateActual !== null && cpbhRatePlan !== null) ? (cpbhRateActual - cpbhRatePlan) : null;
-        kpiHtml += '  <div class="kpi-footer"><span class="badge ' + (cpbhRateDiff === null ? 'badge-neutral' : (cpbhRateDiff<=0?'badge-success':'badge-danger')) + '">' + (cpbhRateDiff === null ? 'Chuẩn' : (cpbhRateDiff<=0?'Tối ưu CP':'Cao hơn KH')) + '</span><span class="diff ' + (cpbhRateDiff<=0?'pos':'neg') + '">' + (cpbhRateDiff !== null ? ((cpbhRateDiff>=0?'+':'') + cpbhRateDiff.toFixed(1) + '%') : '') + '</span></div>';
+        kpiHtml += '  <div class="kpi-label">Tỷ lệ CP / Doanh thu (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
+        kpiHtml += '  <div class="kpi-value">' + (dttRateActual !== null ? dttRateActual.toFixed(1) + '<span class="unit">%</span>' : '—') + '</div>';
+        kpiHtml += '  <div class="kpi-sub">Định mức kế hoạch: <b>' + (dttRatePlan !== null ? dttRatePlan.toFixed(1) + '%' : '—') + '</b></div>';
+        const dttDiff = (dttRateActual !== null && dttRatePlan !== null) ? (dttRateActual - dttRatePlan) : null;
+        kpiHtml += '  <div class="kpi-footer"><span class="badge ' + (dttDiff === null ? 'badge-neutral' : (dttDiff<=0?'badge-success':'badge-danger')) + '">' + (dttDiff === null ? 'Chuẩn' : (dttDiff<=0?'Tối ưu':'Cao hơn KH')) + '</span><span class="diff ' + (dttDiff<=0?'pos':'neg') + '">' + (dttDiff !== null ? ((dttDiff>=0?'+':'') + dttDiff.toFixed(1) + '%') : '') + '</span></div>';
         kpiHtml += '</div>';
 
-        // Card 4: Lợi nhuận gộp
+        const grossProfit = revActual - costActual;
         kpiHtml += '<div class="kpi-card highlight">';
-        kpiHtml += '  <div class="kpi-label">Lợi nhuận gộp (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
-        kpiHtml += '  <div class="kpi-value">' + fmtN(lngActual) + ' <span class="unit">tỷ</span></div>';
-        kpiHtml += '  <div class="kpi-sub">Kế hoạch: <b>' + fmtN(lngPlan) + ' tỷ</b></div>';
-        kpiHtml += '  <div class="kpi-footer">' + pctBadge(lngActual, lngPlan, true) + ' <span class="badge badge-brand">Biên LNG: ' + (grossMarginActual !== null ? grossMarginActual.toFixed(1) + '%' : '—') + '</span></div>';
+        kpiHtml += '  <div class="kpi-label">Đóng góp Biên ròng (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
+        kpiHtml += '  <div class="kpi-value">' + fmtN(grossProfit) + ' <span class="unit">tỷ</span></div>';
+        kpiHtml += '  <div class="kpi-sub">Doanh thu trừ Chi phí vận hành</div>';
+        kpiHtml += '  <div class="kpi-footer"><span class="badge badge-brand">Tỷ suất ' + (revActual > 0 ? (grossProfit/revActual*100).toFixed(1) : 0) + '%</span></div>';
         kpiHtml += '</div>';
       } else {
-        const costDiff = totalCostActual - totalCostBudget;
         kpiHtml += '<div class="kpi-card highlight">';
         kpiHtml += '  <div class="kpi-label">Chi phí Thực tế (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
-        kpiHtml += '  <div class="kpi-value">' + fmtN(totalCostActual) + ' <span class="unit">tỷ</span></div>';
-        kpiHtml += '  <div class="kpi-sub">Số dòng chi phí: <b>' + curCost.length + ' dòng</b></div>';
+        kpiHtml += '  <div class="kpi-value">' + fmtN(costActual) + ' <span class="unit">tỷ</span></div>';
+        kpiHtml += '  <div class="kpi-sub">Tổng số dòng chi phí: <b>' + curCost.length + ' dòng</b></div>';
         kpiHtml += '  <div class="kpi-footer"><span class="badge ' + (costDiff<=0?'badge-success':'badge-danger') + '">' + (costDiff<=0?'Trong hạn mức':'Bội chi') + '</span><span class="diff ' + (costDiff<=0?'pos':'neg') + '">' + (costDiff<=0?'-':'+') + fmtN(Math.abs(costDiff)) + ' tỷ</span></div>';
         kpiHtml += '</div>';
 
         kpiHtml += '<div class="kpi-card">';
         kpiHtml += '  <div class="kpi-label">Định mức Phê duyệt (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
-        kpiHtml += '  <div class="kpi-value">' + fmtN(totalCostBudget) + ' <span class="unit">tỷ</span></div>';
+        kpiHtml += '  <div class="kpi-value">' + fmtN(costBudget) + ' <span class="unit">tỷ</span></div>';
         kpiHtml += '  <div class="kpi-sub">Ngân sách trần phân bổ</div>';
-        kpiHtml += '  <div class="kpi-footer">' + pctBadge(totalCostActual, totalCostBudget, false) + ' <span>Tỷ lệ sử dụng</span></div>';
+        kpiHtml += '  <div class="kpi-footer">' + pctBadge(costActual, costBudget, false) + ' <span>Tỷ lệ sử dụng</span></div>';
         kpiHtml += '</div>';
 
         kpiHtml += '<div class="kpi-card">';
         kpiHtml += '  <div class="kpi-label">Hiệu quả Ngân sách (' + (isAll ? 'Toàn kỳ' : period) + ')</div>';
         kpiHtml += '  <div class="kpi-value">' + (costDiff<=0 ? '-' : '+') + fmtN(Math.abs(costDiff)) + ' <span class="unit">tỷ</span></div>';
         kpiHtml += '  <div class="kpi-sub">' + (costDiff<=0 ? 'Tiết kiệm so với định mức' : 'Vượt định mức ngân sách') + '</div>';
-        kpiHtml += '  <div class="kpi-footer"><span class="badge ' + (costDiff<=0?'badge-success':'badge-danger') + '">' + (totalCostBudget>0 ? (costDiff/totalCostBudget*100).toFixed(1) + '%' : '—') + '</span></div>';
+        kpiHtml += '  <div class="kpi-footer"><span class="badge ' + (costDiff<=0?'badge-success':'badge-danger') + '">' + (costBudget>0 ? (costDiff/costBudget*100).toFixed(1) + '%' : '—') + '</span></div>';
         kpiHtml += '</div>';
 
         kpiHtml += '<div class="kpi-card">';
@@ -15731,11 +15593,10 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         kpiHtml += '  <div class="kpi-footer"><span class="badge badge-neutral">' + curNx.length + ' mục có nhận xét</span></div>';
         kpiHtml += '</div>';
       }
-
       const kpiContainer = document.getElementById('kpiGridContainer');
       if(kpiContainer) kpiContainer.innerHTML = kpiHtml;
 
-      // ─── TOP KHOẢN MỤC VƯỢT ĐỊNH MỨC ───
+      // 4. Phân tích Top Khoản mục vượt định mức trong kỳ
       const overruns = [];
       const itemAgg = new Map();
       curCost.forEach(r => {
@@ -15785,7 +15646,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       const topOverrunsEl = document.getElementById('topOverrunsBody');
       if(topOverrunsEl) topOverrunsEl.innerHTML = topTrs;
 
-      // ─── CẬP NHẬT BIỂU ĐỒ NẾU CÓ ───
+      // 5. Cập nhật Biểu đồ Trend và Doughnut
       if(trendChartInstance){
         try {
           const bgActual = DATA.months.map(m => (isAll || m === period) ? '#0E3D34' : 'rgba(14, 61, 52, 0.25)');
@@ -15818,7 +15679,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         } catch(e){}
       }
 
-      // ─── RENDER BẢNG P&L NẾU LÀ PHÒNG BAN DOANH THU ───
+      // 6. Render Bảng P&L nếu là phòng ban Doanh thu
       if(DATA.isRevenueDept){
         const plContainer = document.getElementById('plTableContainer');
         if(plContainer){
@@ -15837,7 +15698,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
             plTrs += '  <td style="padding-left:' + (14 + indent) + 'px;">' + (isBold ? '<b>' + escapeHtml(it.name) + '</b>' : escapeHtml(it.name)) + '</td>';
             plTrs += '  <td class="text-right num">' + fmtN(plan) + '</td>';
             plTrs += '  <td class="text-right num font-semibold" style="color:var(--brand);">' + fmtN(act) + '</td>';
-            plTrs += '  <td class="text-center">' + pctBadge(act, plan, it.isRevenue) + '</td>';
+            plTrs += '  <td class="text-center">' + pctBadge(act, plan, true) + '</td>';
             plTrs += '  <td class="text-right num ' + (diff>=0?'text-success':'text-danger') + '">' + (diff>=0?'+':'') + fmtN(diff) + '</td>';
             plTrs += '</tr>';
           });
@@ -15858,7 +15719,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         }
       }
 
-      // ─── RENDER BẢNG CHI PHÍ & NGÂN SÁCH ───
+      // 7. Render Bảng Chi tiết Chi phí & Ngân sách
       const costContainer = document.getElementById('costTablesContainer');
       if(costContainer){
         const catMap = new Map();
@@ -15879,7 +15740,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
 
         let costHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">';
         costHtml += '  <h3 style="color:var(--brand); font-size:1.2rem;">Danh mục Chi phí Phòng ban (' + escapeHtml(periodLabel) + ')</h3>';
-        costHtml += '  <span style="font-size:0.85rem; color:var(--ink-light); font-variant-numeric:tabular-nums;">Tổng Thực tế: <b style="color:var(--brand); font-size:1.05rem;">' + fmtN(totalCostActual) + ' tỷ</b> / Định mức: <b>' + fmtN(totalCostBudget) + ' tỷ</b></span>';
+        costHtml += '  <span style="font-size:0.85rem; color:var(--ink-light); font-variant-numeric:tabular-nums;">Tổng Thực tế: <b style="color:var(--brand); font-size:1.05rem;">' + fmtN(costActual) + ' tỷ</b> / Định mức: <b>' + fmtN(costBudget) + ' tỷ</b></span>';
         costHtml += '</div>';
 
         if(catMap.size === 0){
@@ -15888,9 +15749,9 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
           catMap.forEach((c, catName) => {
             const catDiff = c.act - c.bud;
             costHtml += '<div class="card cost-cat-card">';
-            costHtml += '  <div class="card-header">';
-            costHtml += '    <div><b style="font-size:1.05rem; color:var(--brand);">' + escapeHtml(catName) + '</b> <span style="font-size:0.8rem; color:var(--muted);">(' + c.items.size + ' khoản mục)</span></div>';
-            costHtml += '    <div style="display:flex; gap:12px; align-items:center; font-size:0.85rem;">';
+            costHtml += '  <div class="cat-header">';
+            costHtml += '    <div><span class="cat-title">' + escapeHtml(catName) + '</span><span class="cat-count">(' + c.items.size + ' khoản mục)</span></div>';
+            costHtml += '    <div class="cat-summary">';
             costHtml += '      <span>Định mức: <b>' + fmtN(c.bud) + ' tỷ</b></span>';
             costHtml += '      <span>Thực tế: <b style="color:var(--brand);">' + fmtN(c.act) + ' tỷ</b></span>';
             costHtml += '      <span class="badge ' + (catDiff<=0?'badge-success':'badge-danger') + '">' + (catDiff<=0?'Tiết kiệm -':'Vượt +') + fmtN(Math.abs(catDiff)) + ' tỷ</span>';
@@ -15924,10 +15785,63 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         costContainer.innerHTML = costHtml;
       }
 
-      // ─── RENDER BẢNG CHI TIẾT BCQT ───
-      renderBcqtTable();
+      // 8. Render Bảng Chi tiết BCQT (Format gốc chuẩn, tích hợp highlight cột tháng được chọn)
+      const bcqtContainer = document.getElementById('bcqtTableContainer');
+      if(bcqtContainer){
+        if(DATA.bcqtTree && DATA.bcqtTree.length){
+          let bcqtHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">';
+          bcqtHtml += '  <h3 style="color:var(--brand); font-size:1.2rem;">Chi tiết BCQT — ' + escapeHtml(DATA.deptName) + ' (' + escapeHtml(periodLabel) + ')</h3>';
+          bcqtHtml += '  <span class="badge badge-neutral">' + (DATA.isRevenueDept ? 'Doanh thu &amp; Chi phí' : 'Chi phí Hoạt động') + '</span>';
+          bcqtHtml += '</div>';
 
-      // ─── RENDER NHẬN XÉT & KẾ HOẠCH HÀNH ĐỘNG ───
+          bcqtHtml += '<div class="card table-card">';
+          bcqtHtml += '  <div class="table-wrap">';
+          bcqtHtml += '    <table class="data-table">';
+          bcqtHtml += '      <thead>';
+          bcqtHtml += '        <tr>';
+          bcqtHtml += '          <th style="width:70px;">Mã</th>';
+          bcqtHtml += '          <th>Khoản mục</th>';
+          bcqtHtml += '          <th class="text-right" style="width:110px;">Lũy kế TT</th>';
+          bcqtHtml += '          <th class="text-right" style="width:110px;">Lũy kế KH</th>';
+          DATA.months.forEach(m => {
+            const isThisCol = (m === period);
+            bcqtHtml += '        <th class="text-right ' + (isThisCol?'col-highlight':'') + '" style="min-width:90px;">' + escapeHtml(m) + '</th>';
+          });
+          bcqtHtml += '        </tr>';
+          bcqtHtml += '      </thead>';
+          bcqtHtml += '      <tbody>';
+
+          DATA.bcqtTree.forEach(node => {
+            const isL1 = node.level === 1;
+            const isL2 = node.level === 2;
+            const indent = (node.level - 1) * 16;
+            const rowClass = isL1 ? 'tree-l1' : (isL2 ? 'tree-l2' : 'tree-l3');
+
+            bcqtHtml += '<tr class="' + rowClass + '">';
+            bcqtHtml += '  <td style="color:var(--muted); white-space:nowrap;">' + escapeHtml(node.code) + '</td>';
+            bcqtHtml += '  <td style="padding-left:' + (14 + indent) + 'px;">' + (isL1 ? '<b>' + escapeHtml(node.name) + '</b>' : escapeHtml(node.name)) + '</td>';
+            bcqtHtml += '  <td class="text-right num font-semibold" style="color:var(--brand);">' + fmtN(node.ytdAct) + '</td>';
+            bcqtHtml += '  <td class="text-right num">' + fmtN(node.ytdPlan) + '</td>';
+            
+            DATA.months.forEach(m => {
+              const mData = node.months && node.months[m] ? node.months[m] : { act: 0, plan: 0 };
+              const isThisCol = (m === period);
+              bcqtHtml += '<td class="text-right num ' + (isThisCol ? 'col-highlight' : '') + '">' + fmtN(mData.act) + '</td>';
+            });
+            bcqtHtml += '</tr>';
+          });
+
+          bcqtHtml += '      </tbody>';
+          bcqtHtml += '    </table>';
+          bcqtHtml += '  </div>';
+          bcqtHtml += '</div>';
+          bcqtContainer.innerHTML = bcqtHtml;
+        } else {
+          bcqtContainer.innerHTML = '<div class="card"><div class="card-body" style="color:var(--muted); text-align:center;">Chưa có dữ liệu Báo cáo Quản trị cho phòng ban này.</div></div>';
+        }
+      }
+
+      // 9. Render Nhận xét & Kế hoạch hành động
       let nxHtml = '';
       if(curNx && curNx.length > 0){
         curNx.forEach(nx => {
@@ -15946,7 +15860,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
           if(nx.actual !== null || nx.budget !== null){
             nxHtml += '<div class="nx-stats-strip">';
             if(nx.budget !== null){
-              nxHtml += '  <div class="nx-stat-col"><div class="lbl">Kế hoạch / Định mức</div><div class="val">' + fmtN(nx.budget) + ' tỷ</div></div>';
+              nxHtml += '  <div class="nx-stat-col"><div class="lbl">Định mức</div><div class="val">' + fmtN(nx.budget) + ' tỷ</div></div>';
             }
             if(nx.actual !== null){
               nxHtml += '  <div class="nx-stat-col"><div class="lbl">Thực tế</div><div class="val" style="color:var(--brand);">' + fmtN(nx.actual) + ' tỷ</div></div>';
@@ -15978,25 +15892,29 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
           nxHtml += '</div>';
         });
       } else {
-        const costDiff = totalCostActual - totalCostBudget;
         const causeParas = [];
         const actionParas = [];
 
-        if(DATA.isRevenueDept){
-          if(revDiff >= 0){
-            causeParas.push('Doanh thu thuần trong kỳ đạt ' + fmtN(revActual) + ' tỷ đồng, hoàn thành vượt kế hoạch +' + fmtN(revDiff) + ' tỷ đồng.');
-          } else {
-            causeParas.push('Doanh thu thuần trong kỳ đạt ' + fmtN(revActual) + ' tỷ đồng, đạt ' + (revPlan>0?(revActual/revPlan*100).toFixed(1):0) + '% kế hoạch (thiếu -' + fmtN(Math.abs(revDiff)) + ' tỷ đồng).');
-            actionParas.push('Tập trung đẩy mạnh bán lẻ đa kênh, khai thác sàn TMĐT và tối ưu cơ cấu sản phẩm biên lợi nhuận cao.');
-          }
+        if(costDiff <= 0){
+          causeParas.push('Chi phí hoạt động trong kỳ kiểm soát tốt, tiết kiệm -' + fmtN(Math.abs(costDiff)) + ' tỷ đồng so với định mức phê duyệt.');
+          actionParas.push('Tiếp tục duy trì kỷ luật ngân sách và hiệu quả tối ưu chi phí hiện tại.');
+        } else {
+          causeParas.push('Chi phí trong kỳ phát sinh vượt định mức +' + fmtN(costDiff) + ' tỷ đồng, cần rà soát lại các khoản mục chi phí lớn.');
+          actionParas.push('Đề xuất lãnh đạo phòng ban kiểm soát chặt chẽ các đề xuất chi mới và tối ưu các khoản mục đang bội chi.');
         }
 
-        if(cpbhDiff <= 0){
-          causeParas.push('Chi phí bán hàng trong kỳ kiểm soát tốt ở mức ' + fmtN(cpbhActual) + ' tỷ đồng (tiết kiệm -' + fmtN(Math.abs(cpbhDiff)) + ' tỷ đồng so với kế hoạch ' + fmtN(cpbhPlan) + ' tỷ).');
-          actionParas.push('Tiếp tục kiểm soát chặt chẽ ngân sách quảng cáo và chi phí vận hành kênh.');
-        } else {
-          causeParas.push('Chi phí bán hàng trong kỳ phát sinh +' + fmtN(cpbhDiff) + ' tỷ đồng so với kế hoạch.');
-          actionParas.push('Rà soát lại hiệu quả chi phí marketing và chiết khấu bán hàng.');
+        if(topOverrun.length > 0){
+          causeParas.push('Các khoản mục vượt định mức đáng chú ý: ' + topOverrun.map(o => o.name + ' (+' + fmtN(o.diff) + ' tỷ)').join(', ') + '.');
+          actionParas.push('Ưu tiên kiểm tra, đàm phán lại chi phí và lập kế hoạch điều chỉnh đối với các khoản mục trên.');
+        }
+
+        if(DATA.isRevenueDept){
+          if(revDiff >= 0){
+            causeParas.unshift('Doanh thu thực tế đạt ' + fmtN(revActual) + ' tỷ đồng, hoàn thành vượt kế hoạch +' + fmtN(revDiff) + ' tỷ đồng.');
+          } else {
+            causeParas.unshift('Doanh thu thực tế đạt ' + fmtN(revActual) + ' tỷ đồng, chưa đạt kế hoạch (thiếu -' + fmtN(Math.abs(revDiff)) + ' tỷ đồng).');
+            actionParas.unshift('Tăng tốc bán hàng, mở rộng tệp đối tác và thúc đẩy doanh thu các tuần tiếp theo để bù đắp chỉ tiêu.');
+          }
         }
 
         nxHtml += '<div class="nx-detail-panel">';
@@ -16005,7 +15923,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         nxHtml += '      <span class="badge badge-brand" style="margin-right:8px;">' + escapeHtml(periodLabel) + '</span>';
         nxHtml += '      <span class="nx-item-title">Đánh giá Tổng hợp Điều hành — ' + escapeHtml(DATA.deptName) + '</span>';
         nxHtml += '    </div>';
-        nxHtml += '    <div><span class="badge ' + (cpbhDiff<=0?'badge-success':'badge-warning') + '">' + (cpbhDiff<=0?'Kiểm soát tốt':'Cần tối ưu') + '</span></div>';
+        nxHtml += '    <div><span class="badge ' + (costDiff<=0?'badge-success':'badge-warning') + '">' + (costDiff<=0?'Kiểm soát tốt':'Cần tối ưu') + '</span></div>';
         nxHtml += '  </div>';
 
         nxHtml += '  <div class="nx-insights-box-full">';
@@ -16036,270 +15954,7 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
       if(nxDetail) nxDetail.innerHTML = nxHtml;
     }
 
-    // ─── RENDER BẢNG CHI TIẾT BCQT (CÂY TƯƠNG TÁC ĐỘNG CHUẨN) ───
-    function renderBcqtTable(){
-      const container = document.getElementById('bcqtTableContainer');
-      if(!container) return;
-
-      const tree = DATA.bcqtTree || [];
-      if(!tree.length){
-        container.innerHTML = '<div class="card"><div class="card-body" style="color:var(--muted); text-align:center;">Chưa có dữ liệu Báo cáo Quản trị cho phòng ban này.</div></div>';
-        return;
-      }
-
-      const itemMap = new Map();
-      tree.forEach(n => itemMap.set(n.code, n));
-
-      function isAncestorCollapsed(it){
-        let pCode = it.parent;
-        while(pCode){
-          if(bcqtCollapsedNodes.has(pCode)) return true;
-          const pIt = itemMap.get(pCode);
-          pCode = pIt ? pIt.parent : null;
-        }
-        return false;
-      }
-
-      let matchedCodes = new Set();
-      if(bcqtSearchQuery){
-        tree.forEach(it => {
-          const matchName = it.name.toLowerCase().includes(bcqtSearchQuery);
-          const matchCode = it.code.toLowerCase().includes(bcqtSearchQuery);
-          if(matchName || matchCode){
-            matchedCodes.add(it.code);
-            let p = it.parent;
-            while(p){
-              matchedCodes.add(p);
-              const pIt = itemMap.get(p);
-              p = pIt ? pIt.parent : null;
-            }
-          }
-        });
-      }
-
-      function passLevel(it){
-        if(bcqtLevelFilter === 'ALL') return true;
-        return String(it.level) === String(bcqtLevelFilter);
-      }
-
-      const isFocus = bcqtViewMode === 'focus';
-      let html = '<div class="card table-card">';
-      html += '  <div class="card-header">';
-      html += '    <h3>Báo cáo Quản trị chi tiết — ' + escapeHtml(DATA.deptName) + ' (' + (isFocus ? getPeriodLabel(currentPeriod) : '12 Tháng') + ')</h3>';
-      html += '    <span class="badge badge-brand">Đơn vị: Tỷ đồng</span>';
-      html += '  </div>';
-      html += '  <div class="table-wrap">';
-      html += '    <table class="data-table bcqt-tree-table">';
-
-      if(isFocus){
-        const isAll = (currentPeriod === 'ALL');
-        const mLabel = isAll ? 'Toàn kỳ' : currentPeriod;
-
-        html += '      <thead>';
-        html += '        <tr>';
-        html += '          <th style="width:70px;">Mã</th>';
-        html += '          <th style="min-width:260px;">Khoản mục báo cáo quản trị</th>';
-        html += '          <th class="text-right" style="width:110px;">Thực tế ' + escapeHtml(mLabel) + '</th>';
-        html += '          <th class="text-right" style="width:110px;">Kế hoạch ' + escapeHtml(mLabel) + '</th>';
-        html += '          <th class="text-center" style="width:100px;">% Đạt ' + escapeHtml(mLabel) + '</th>';
-        html += '          <th class="text-right" style="width:110px;">Lũy kế TT</th>';
-        html += '          <th class="text-right" style="width:110px;">Lũy kế KH</th>';
-        html += '          <th class="text-center" style="width:100px;">% Đạt YTD</th>';
-        html += '          <th class="text-right" style="width:110px;">Chênh lệch YTD</th>';
-        html += '        </tr>';
-        html += '      </thead>';
-        html += '      <tbody>';
-
-        tree.forEach(node => {
-          if(!passLevel(node)) return;
-          if(bcqtSearchQuery && !matchedCodes.has(node.code)) return;
-          if(!bcqtSearchQuery && isAncestorCollapsed(node)) return;
-
-          const mData = isAll ? { act: node.ytdAct, plan: node.ytdPlan } : ((node.months && node.months[currentPeriod]) || { act: 0, plan: 0 });
-          const mAct = mData.act;
-          const mPlan = mData.plan;
-          const yAct = node.ytdAct;
-          const yPlan = node.ytdPlan;
-          const yDiff = yAct - yPlan;
-
-          const isL1 = node.level === 1;
-          const isL2 = node.level === 2;
-          const indent = (node.level - 1) * 16;
-          const rowClass = isL1 ? 'tree-l1' : (isL2 ? 'tree-l2' : 'tree-l3');
-
-          let toggleIcon = '';
-          if(node.hasChildren){
-            const isCol = bcqtCollapsedNodes.has(node.code);
-            toggleIcon = '<button type="button" class="tree-toggle-btn" data-code="' + escapeHtml(node.code) + '" onclick="toggleBcqtNode(this.dataset.code)">' + (isCol ? '▶' : '▼') + '</button>';
-          } else {
-            toggleIcon = '<span style="display:inline-block; width:18px; margin-right:6px;"></span>';
-          }
-
-          html += '<tr class="' + rowClass + '">';
-          html += '  <td style="color:var(--muted); white-space:nowrap;">' + escapeHtml(node.code) + '</td>';
-          html += '  <td style="padding-left:' + (10 + indent) + 'px;">' + toggleIcon + '<span>' + escapeHtml(node.name) + '</span></td>';
-          html += '  <td class="text-right num font-semibold" style="color:var(--brand);">' + fmtN(mAct) + '</td>';
-          html += '  <td class="text-right num">' + fmtN(mPlan) + '</td>';
-          html += '  <td class="text-center">' + pctBadge(mAct, mPlan, node.isRevenue) + '</td>';
-          html += '  <td class="text-right num font-semibold">' + fmtN(yAct) + '</td>';
-          html += '  <td class="text-right num">' + fmtN(yPlan) + '</td>';
-          html += '  <td class="text-center">' + pctBadge(yAct, yPlan, node.isRevenue) + '</td>';
-          html += '  <td class="text-right num ' + (yDiff>=0?'text-success':'text-danger') + '">' + (yDiff>=0?'+':'') + fmtN(yDiff) + '</td>';
-          html += '</tr>';
-        });
-
-        html += '      </tbody>';
-      } else {
-        html += '      <thead>';
-        html += '        <tr>';
-        html += '          <th style="width:70px;">Mã</th>';
-        html += '          <th style="min-width:240px;">Khoản mục</th>';
-        html += '          <th class="text-right" style="width:105px;">Lũy kế TT</th>';
-        html += '          <th class="text-right" style="width:105px;">Lũy kế KH</th>';
-        DATA.months.forEach(m => {
-          const isThisCol = (m === currentPeriod);
-          html += '        <th class="text-right ' + (isThisCol?'col-highlight':'') + '" style="min-width:90px;">' + escapeHtml(m) + '</th>';
-        });
-        html += '        </tr>';
-        html += '      </thead>';
-        html += '      <tbody>';
-
-        tree.forEach(node => {
-          if(!passLevel(node)) return;
-          if(bcqtSearchQuery && !matchedCodes.has(node.code)) return;
-          if(!bcqtSearchQuery && isAncestorCollapsed(node)) return;
-
-          const isL1 = node.level === 1;
-          const isL2 = node.level === 2;
-          const indent = (node.level - 1) * 16;
-          const rowClass = isL1 ? 'tree-l1' : (isL2 ? 'tree-l2' : 'tree-l3');
-
-          let toggleIcon = '';
-          if(node.hasChildren){
-            const isCol = bcqtCollapsedNodes.has(node.code);
-            toggleIcon = '<button type="button" class="tree-toggle-btn" data-code="' + escapeHtml(node.code) + '" onclick="toggleBcqtNode(this.dataset.code)">' + (isCol ? '▶' : '▼') + '</button>';
-          } else {
-            toggleIcon = '<span style="display:inline-block; width:18px; margin-right:6px;"></span>';
-          }
-
-          html += '<tr class="' + rowClass + '">';
-          html += '  <td style="color:var(--muted); white-space:nowrap;">' + escapeHtml(node.code) + '</td>';
-          html += '  <td style="padding-left:' + (10 + indent) + 'px;">' + toggleIcon + '<span>' + escapeHtml(node.name) + '</span></td>';
-          html += '  <td class="text-right num font-semibold" style="color:var(--brand);">' + fmtN(node.ytdAct) + '</td>';
-          html += '  <td class="text-right num">' + fmtN(node.ytdPlan) + '</td>';
-
-          DATA.months.forEach(m => {
-            const isThisCol = (m === currentPeriod);
-            const val = (node.months && node.months[m]) ? node.months[m].act : 0;
-            html += '<td class="text-right num ' + (isThisCol?'col-highlight':'') + '">' + fmtN(val) + '</td>';
-          });
-          html += '</tr>';
-        });
-
-        html += '      </tbody>';
-      }
-
-      html += '    </table>';
-      html += '  </div>';
-      html += '</div>';
-      container.innerHTML = html;
-    }
-
-    // ─── KHỞI TẠO BIỂU ĐỒ TRONG TRY-CATCH RIÊNG BIỆT ───
-    function initCharts(){
-      if(typeof Chart === 'undefined') return;
-      try {
-        const trendCtx = document.getElementById('monthlyTrendChart');
-        if(trendCtx){
-          const trendLabels = DATA.months.map(m => {
-            const p = m.match(/T?(\d+)/i);
-            return p ? ('T' + p[1]) : m;
-          });
-
-          const isRev = DATA.isRevenueDept;
-          const actSeries = DATA.months.map(m => {
-            if(isRev){
-              const met = getNodeMetric('3', 'doanh thu thuần', m);
-              return Number((met.act || 0).toFixed(3));
-            } else {
-              const s = DATA.costRows.filter(r => r.m === m).reduce((a,r) => a + r.act, 0);
-              return Number(s.toFixed(3));
-            }
-          });
-
-          const planSeries = DATA.months.map(m => {
-            if(isRev){
-              const met = getNodeMetric('3', 'doanh thu thuần', m);
-              return Number((met.plan || 0).toFixed(3));
-            } else {
-              const s = DATA.costRows.filter(r => r.m === m).reduce((a,r) => a + r.bud, 0);
-              return Number(s.toFixed(3));
-            }
-          });
-
-          trendChartInstance = new Chart(trendCtx, {
-            type: 'bar',
-            data: {
-              labels: trendLabels,
-              datasets: [
-                {
-                  label: isRev ? 'Doanh thu thuần TT' : 'Chi phí Thực tế',
-                  data: actSeries,
-                  backgroundColor: '#0E3D34',
-                  borderRadius: 4
-                },
-                {
-                  label: isRev ? 'Doanh thu thuần KH' : 'Định mức Ngân sách',
-                  data: planSeries,
-                  backgroundColor: '#C8A161',
-                  borderRadius: 4
-                }
-              ]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 11, weight: '600' } } }
-              },
-              scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { display: false } }
-              }
-            }
-          });
-        }
-
-        const pieCtx = document.getElementById('costDoughnutChart');
-        if(pieCtx){
-          const pieColors = ['#0E3D34', '#C8A161', '#1B5E20', '#A68144', '#2F3A36', '#5C6B66', '#9A2C2C', '#374B44'];
-          doughnutChartInstance = new Chart(pieCtx, {
-            type: 'doughnut',
-            data: {
-              labels: [],
-              datasets: [{
-                data: [],
-                backgroundColor: pieColors,
-                borderWidth: 2,
-                borderColor: '#ffffff'
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { position: 'right', labels: { boxWidth: 10, font: { family: 'Inter', size: 10 } } }
-              },
-              cutout: '65%'
-            }
-          });
-        }
-      } catch(chartErr){
-        console.warn('Chart.js init warning:', chartErr);
-      }
-    }
-
-    // ─── KHỞI TẠO BÁO CÁO KHI TẢI TRANG (RENDER DỮ LIỆU ĐẦU TIÊN) ───
+    // Khởi tạo toàn bộ giao diện và Charts an toàn
     function initReport(){
       try {
         const ySel = document.getElementById('yearSelect');
@@ -16346,27 +16001,123 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
         currentPeriod = startPeriod;
         if(mSel) mSel.value = startPeriod;
 
-        // BƯỚC QUAN TRỌNG: Render giao diện số liệu đầu tiên (không phụ thuộc vào chart)
+        // Render giao diện trước
         renderPeriod(currentPeriod);
 
-        // BƯỚC TIẾP THEO: Khởi tạo biểu đồ an toàn
-        initCharts();
+        // Khởi tạo Chart.js an toàn trong try-catch
+        if(typeof Chart !== 'undefined'){
+          try {
+            const trendCtx = document.getElementById('monthlyTrendChart');
+            if(trendCtx){
+              const isRev = DATA.isRevenueDept;
+              const trendLabels = DATA.months.map(m => {
+                const p = m.match(/T?(\d+)/i);
+                return p ? ('T' + p[1]) : m;
+              });
 
-        // Cập nhật lại biểu đồ cho kỳ hiện tại
-        if(trendChartInstance || doughnutChartInstance){
-          const isAll = (currentPeriod === 'ALL');
-          const curCost = isAll ? DATA.costRows : DATA.costRows.filter(r => r.m === currentPeriod);
-          if(doughnutChartInstance){
-            const catMap = new Map();
-            curCost.forEach(r => catMap.set(r.cat, (catMap.get(r.cat) || 0) + r.act));
-            const pieLabels = [];
-            const pieData = [];
-            Array.from(catMap.entries()).sort((a,b) => b[1] - a[1]).forEach(([cat, val]) => {
-              if(val > 0.0001){ pieLabels.push(cat); pieData.push(Number(val.toFixed(3))); }
-            });
-            doughnutChartInstance.data.labels = pieLabels;
-            doughnutChartInstance.data.datasets[0].data = pieData;
-            doughnutChartInstance.update();
+              const actSeries = DATA.months.map(m => {
+                if(isRev){
+                  let s = 0;
+                  DATA.bcqtRows.filter(r => r.m === m).forEach(r => {
+                    if(r.lvl === 1 && (r.km||'').toLowerCase().includes('doanh thu')) s += r.act;
+                  });
+                  return Number(s.toFixed(3));
+                } else {
+                  const s = DATA.costRows.filter(r => r.m === m).reduce((a,r) => a + r.act, 0);
+                  return Number(s.toFixed(3));
+                }
+              });
+
+              const planSeries = DATA.months.map(m => {
+                if(isRev){
+                  let s = 0;
+                  DATA.bcqtRows.filter(r => r.m === m).forEach(r => {
+                    if(r.lvl === 1 && (r.km||'').toLowerCase().includes('doanh thu')) s += r.plan;
+                  });
+                  if(s === 0){
+                    DATA.khRows.filter(r => r.m === m).forEach(r => {
+                      if(r.lvl === 1 && (r.km||'').toLowerCase().includes('doanh thu')) s += r.plan;
+                    });
+                  }
+                  return Number(s.toFixed(3));
+                } else {
+                  const s = DATA.costRows.filter(r => r.m === m).reduce((a,r) => a + r.bud, 0);
+                  return Number(s.toFixed(3));
+                }
+              });
+
+              trendChartInstance = new Chart(trendCtx, {
+                type: 'bar',
+                data: {
+                  labels: trendLabels,
+                  datasets: [
+                    {
+                      label: isRev ? 'Doanh thu Thực tế' : 'Chi phí Thực tế',
+                      data: actSeries,
+                      backgroundColor: '#0E3D34',
+                      borderRadius: 4
+                    },
+                    {
+                      label: isRev ? 'Doanh thu Kế hoạch' : 'Định mức Ngân sách',
+                      data: planSeries,
+                      backgroundColor: '#C8A161',
+                      borderRadius: 4
+                    }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 11, weight: '600' } } }
+                  },
+                  scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                  }
+                }
+              });
+            }
+
+            const pieCtx = document.getElementById('costDoughnutChart');
+            if(pieCtx){
+              const pieColors = ['#0E3D34', '#C8A161', '#1B5E20', '#A68144', '#2F3A36', '#5C6B66', '#9A2C2C', '#374B44'];
+              doughnutChartInstance = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                  labels: [],
+                  datasets: [{
+                    data: [],
+                    backgroundColor: pieColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 10, font: { family: 'Inter', size: 10 } } }
+                  },
+                  cutout: '65%'
+                }
+              });
+
+              const isAll = (currentPeriod === 'ALL');
+              const curCost = isAll ? DATA.costRows : DATA.costRows.filter(r => r.m === currentPeriod);
+              const catMap = new Map();
+              curCost.forEach(r => catMap.set(r.cat, (catMap.get(r.cat) || 0) + r.act));
+              const pieLabels = [];
+              const pieData = [];
+              Array.from(catMap.entries()).sort((a,b) => b[1] - a[1]).forEach(([cat, val]) => {
+                if(val > 0.0001){ pieLabels.push(cat); pieData.push(Number(val.toFixed(3))); }
+              });
+              doughnutChartInstance.data.labels = pieLabels;
+              doughnutChartInstance.data.datasets[0].data = pieData;
+              doughnutChartInstance.update();
+            }
+          } catch(chartErr){
+            console.warn('Lỗi khởi tạo Chart.js:', chartErr);
           }
         }
 
@@ -16391,6 +16142,12 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
 
     const blob = new Blob(['\ufeff', fullHtml], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
+
+    if(openDirectly){
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      return true;
+    }
     
     const safeDept = (deptName || 'PhongBan').replace(/[\/\\?%*:|"<>]/g, '_').trim().replace(/\s+/g, '_');
     const filename = `Bao_Cao_${safeDept}.html`;
@@ -16412,6 +16169,9 @@ function exportDepartmentHtml(rawDeptName, initialPeriod){
   }
 }
 
+// Đảm bảo gán toàn cục
+window.exportDepartmentHtml = exportDepartmentHtml;
+window.deptTemplateExport = exportDepartmentHtml;
 
 let _deptExportListCache = null;
 let _deptExportListMonth = null;
@@ -16427,6 +16187,18 @@ function getDeptExportList(){
     return _deptExportListCache;
   }
   const deptDataMap = new Map();
+  function getDeptVal(r){
+    if(!r) return '';
+    if(r['Phòng ban']) return String(r['Phòng ban']).trim();
+    if(r.dept) return String(r.dept).trim();
+    if(r.phong_ban) return String(r.phong_ban).trim();
+    if(r['Bộ phận']) return String(r['Bộ phận']).trim();
+    for(let k of Object.keys(r)){
+      const nk = String(k).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/\s+/g, ' ').trim();
+      if(nk === 'phong ban' || nk === 'bo phan' || nk === 'dept' || nk === 'phong_ban') return String(r[k]).trim();
+    }
+    return '';
+  }
   function ensureDept(d){
     const prim = getStandardDeptName(d);
     if(!prim || prim === 'Tổng Công ty') return null;
@@ -16435,10 +16207,10 @@ function getDeptExportList(){
   }
   if(RAW.bcqtDetail && RAW.bcqtDetail.length){
     RAW.bcqtDetail.forEach(r => {
-      const d = (r['Phòng ban']||'').trim();
+      const d = getDeptVal(r);
       if(!d) return;
-      const tt = toNum(r['Thực tế (tỷ đồng)']);
-      const kh = toNum(r['Kế hoạch (tỷ đồng)']);
+      const tt = toNum(r['Thực tế (tỷ đồng)'] !== undefined ? r['Thực tế (tỷ đồng)'] : (r.actual || r.tt || 0));
+      const kh = toNum(r['Kế hoạch (tỷ đồng)'] !== undefined ? r['Kế hoạch (tỷ đồng)'] : (r.plan || r.kh || 0));
       if(tt !== 0 || kh !== 0){
         const info = ensureDept(d);
         if(info) info.hasBcqt = true;
@@ -16447,9 +16219,9 @@ function getDeptExportList(){
   }
   if(RAW.keHoachKD && RAW.keHoachKD.length){
     RAW.keHoachKD.forEach(r => {
-      const d = (r['Phòng ban']||'').trim();
+      const d = getDeptVal(r);
       if(!d) return;
-      const kh = toNum(r['Kế hoạch (tỷ đồng)']);
+      const kh = toNum(r['Kế hoạch (tỷ đồng)'] !== undefined ? r['Kế hoạch (tỷ đồng)'] : (r.plan || r.kh || 0));
       if(kh !== 0){
         const info = ensureDept(d);
         if(info) info.hasBcqt = true;
@@ -16458,10 +16230,10 @@ function getDeptExportList(){
   }
   if(RAW.chiPhi && RAW.chiPhi.length){
     RAW.chiPhi.forEach(r => {
-      const d = (r['Phòng ban']||'').trim();
+      const d = getDeptVal(r);
       if(!d) return;
-      const tt = toNum(r['Thực tế (tỷ đồng)']);
-      const dm = toNum(r['Định mức (tỷ đồng)']);
+      const tt = toNum(r['Thực tế (tỷ đồng)'] !== undefined ? r['Thực tế (tỷ đồng)'] : (r.actual || r.tt || 0));
+      const dm = toNum(r['Định mức (tỷ đồng)'] !== undefined ? r['Định mức (tỷ đồng)'] : (r.budget || r.dm || r.plan || 0));
       if(tt !== 0 || dm !== 0){
         const info = ensureDept(d);
         if(info) info.hasCost = true;
@@ -16470,7 +16242,7 @@ function getDeptExportList(){
   }
   if(RAW.nhanXet && RAW.nhanXet.length){
     RAW.nhanXet.forEach(r => {
-      const d = (r.dept || r['Phòng ban']||'').trim();
+      const d = getDeptVal(r);
       if(!d) return;
       const info = ensureDept(d);
       if(info) info.hasNx = true;

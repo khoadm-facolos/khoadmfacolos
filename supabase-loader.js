@@ -97,7 +97,11 @@
   function normDept(name, deptMap) {
     if (!name) return 'Tổng Công ty';
     const clean = String(name).trim();
-    return deptMap.get(clean.toLowerCase()) || clean;
+    if (typeof window !== 'undefined' && typeof window.getStandardDeptName === 'function') {
+      const std = window.getStandardDeptName(clean);
+      if (std) return std;
+    }
+    return (deptMap && deptMap.get(clean.toLowerCase())) || clean;
   }
 
   /* ===== CHUẨN HOÁ TÊN TỈNH THÀNH ===== */
@@ -402,6 +406,18 @@
 
   /* 4. TÍNH BẢNG CHI PHÍ CHI TIẾT TỪ BCQT */
   function buildChiPhi(bcqtRows, khkdRows, deptMap) {
+    const khMap = new Map();
+    (khkdRows || []).forEach(r => {
+      const t = parseInt(r['Tháng'] || r.thang || 0);
+      const n = parseInt(r['Năm'] || r.nam || 2026);
+      const ms = String(r['Mã số'] || r.ma_so || '').trim();
+      const pb = normDept(r['Phòng ban'] || r.phong_ban, deptMap);
+      const km = String(r['Khoản mục'] || r.khoan_muc || '').trim().toLowerCase();
+      const val = toNum(r['Kế hoạch'] || r.ke_hoach);
+      if (t && ms) khMap.set(`${t}_${n}_${ms}_${pb}`, val);
+      if (t && km) khMap.set(`${t}_${n}_name_${km}_${pb}`, val);
+    });
+
     const chiPhi = [];
     (bcqtRows || []).forEach(r => {
       const cap = parseInt(r['Cấp'] || r.cap || 0);
@@ -422,6 +438,10 @@
       if (ma >= 8 && ma < 9) phanLoai = 'Chi phí bán hàng';
       else if (ma >= 9 && ma < 10) phanLoai = 'Chi phí quản lý';
 
+      let dm = khMap.get(`${thang}_${nam}_${maStr}_${pb}`);
+      if (dm === undefined && km) dm = khMap.get(`${thang}_${nam}_name_${km.toLowerCase()}_${pb}`);
+      if (dm === undefined) dm = 0;
+
       chiPhi.push({
         'Tháng': label,
         'Phân loại': phanLoai,
@@ -429,7 +449,7 @@
         'Cấp': String(cap),
         'Khoản mục chi phí': km,
         'Phòng ban': pb,
-        'Định mức (tỷ đồng)': 0,
+        'Định mức (tỷ đồng)': dm,
         'Thực tế (tỷ đồng)': tt,
         '%/DTT': 0,
         'Nguyên nhân chênh lệch': ''
@@ -441,6 +461,8 @@
   /* 5. TỔNG HỢP BCQTDETAIL & KEHOACHKD */
   function buildBcqtDetail(bcqtRows, khkdRows, deptMap) {
     const khMap = new Map();
+    const seenActualKeys = new Set();
+
     (khkdRows || []).forEach(r => {
       const t = parseInt(r['Tháng'] || r.thang || 0);
       const n = parseInt(r['Năm'] || r.nam || 2026);
@@ -450,12 +472,13 @@
       khMap.set(key, toNum(r['Kế hoạch'] || r.ke_hoach));
     });
 
-    return (bcqtRows || []).map(r => {
+    const result = (bcqtRows || []).map(r => {
       const t = parseInt(r['Tháng'] || r.thang || 0);
       const n = parseInt(r['Năm'] || r.nam || 2026);
       const ms = String(r['Mã số'] || r.ma_so || '').trim();
       const pb = normDept(r['Phòng ban'] || r.phong_ban, deptMap);
       const key = `${t}_${n}_${ms}_${pb}`;
+      seenActualKeys.add(key);
       return {
         'Tháng': `T${t}/${n}`,
         'Tháng_num': t,
@@ -468,6 +491,31 @@
         'Kế hoạch (tỷ đồng)': khMap.get(key) || 0
       };
     });
+
+    // Bổ sung các khoản mục có Kế hoạch nhưng chưa có Thực tế (hoặc tháng tương lai)
+    (khkdRows || []).forEach(r => {
+      const t = parseInt(r['Tháng'] || r.thang || 0);
+      const n = parseInt(r['Năm'] || r.nam || 2026);
+      const ms = String(r['Mã số'] || r.ma_so || '').trim();
+      const pb = normDept(r['Phòng ban'] || r.phong_ban, deptMap);
+      const key = `${t}_${n}_${ms}_${pb}`;
+      if (!seenActualKeys.has(key)) {
+        seenActualKeys.add(key);
+        result.push({
+          'Tháng': `T${t}/${n}`,
+          'Tháng_num': t,
+          'Năm': n,
+          'Mã số': ms,
+          'Cấp': parseInt(r['Cấp'] || r.cap || 0),
+          'Khoản mục': String(r['Khoản mục'] || r.khoan_muc || '').trim(),
+          'Phòng ban': pb,
+          'Thực tế (tỷ đồng)': 0,
+          'Kế hoạch (tỷ đồng)': toNum(r['Kế hoạch'] || r.ke_hoach)
+        });
+      }
+    });
+
+    return result;
   }
 
   /* 6. BẢNG THÔNG TIN BÁO CÁO */

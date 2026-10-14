@@ -1,7 +1,7 @@
-﻿/**
+/**
  * =========================================================================
  * FACOLOS - BCTC DEFAULT DATA (CÄKT, KQHÄKD, LCTT)
- * Tá»± Ä‘á»™ng Ä‘á»“ng bá»™ vá»›i Supabase hoáº·c sá»­ dá»¥ng lÃ m dá»¯ liá»‡u dá»± phÃ²ng.
+ * Tự động đồng bộ với Supabase hoặc sử dụng làm dữ liệu dự phòng.
  * =========================================================================
  */
 window.DEFAULT_BCTC = {
