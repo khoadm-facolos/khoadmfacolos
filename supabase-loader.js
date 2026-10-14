@@ -31,7 +31,7 @@
   const T_TINH  = 'Tinh_thanh_chuan';
   const T_CDKT  = 'detail_cdkt';
   const T_KQKD  = 'detail_kqkd';
-  const T_LCTT  = 'detai_lctt';
+  const T_LCTT  = 'detail_lctt';
 
   /* ===== TIỆN ÍCH CHUYỂN ĐỔI SỐ ===== */
   function toNum(v) {
@@ -336,8 +336,8 @@
 
       const cat = normCategory(r['NHÓM VTHH'] || r.nhom_vthh, r['Tên hàng'] || r.ten_hang);
       const ch = normChannel(r['Tên nhóm khách hàng sửa'] || r.ten_nhom_kh || '');
-      const dthuVND = toNum(r['DTHU NET'] || r.dthu_net);
-      const dthuTy = dthuVND / 1000000000; // Đổi sang tỷ đồng
+      // Dữ liệu đã được clean_vnd → đã là tỷ đồng, không chia thêm
+      const dthuTy = toNum(r['DTHU NET'] || r.dthu_net);
       const sl = toNum(r['Tổng số lượng bán'] || r.tong_so_luong_ban);
       const sku = String(r['Tên hàng'] || r.ten_hang || 'Chưa phân loại').trim();
 
@@ -352,8 +352,9 @@
       skuMap[monthLabel][sku].soLuong += sl;
       skuMap[monthLabel][sku].dthu += dthuTy;
 
-      // 3. Tỉnh thành
-      const tinh = normProvince(r['Tỉnh/Thành phố'] || r.tinh_thanh_pho, r['Địa điểm giao hàng'] || r.dia_diem_giao_hang, window._globalProvinceMap || new Map());
+      // 3. Tỉnh thành – ưu tiên cột đã map sẵn
+      const tinh = (r['Tỉnh thành phố_chuẩn'] || '').trim() 
+                || normProvince(r['Tỉnh/Thành phố'] || r.tinh_thanh_pho, r['Địa điểm giao hàng'] || r.dia_diem_giao_hang, window._globalProvinceMap || new Map());
       const kTinh = `${monthLabel}#${tinh}#${ch}#${cat}`;
       if (!tinhMap[kTinh]) tinhMap[kTinh] = { thang: monthLabel, tinh, kenh: ch, nhom: cat, soLuong: 0, dthu: 0 };
       tinhMap[kTinh].soLuong += sl;
