@@ -182,8 +182,8 @@
       else if (ma === '4') m.GV_tt += tt;
       else if (ma === '5') m.LNG_tt += tt;
       else if (ma === '8') m.CPBH_tt += tt;
-      else if (ma === '9') m.CPQL_tt += tt;
-      else if (ma === '10') m.EBITDA_tt += tt;
+      else if (ma === '10') m.CPQL_tt += tt;
+      else if (ma === '12') m.EBITDA_tt += tt;
     });
 
     (khkdRows || []).forEach(r => {
@@ -205,8 +205,8 @@
       else if (ma === '4') m.GV_kh += kh;
       else if (ma === '5') m.LNG_kh += kh;
       else if (ma === '8') m.CPBH_kh += kh;
-      else if (ma === '9') m.CPQL_kh += kh;
-      else if (ma === '10') m.EBITDA_kh += kh;
+      else if (ma === '10') m.CPQL_kh += kh;
+      else if (ma === '12') m.EBITDA_kh += kh;
     });
 
     const kpiRows = [];
@@ -523,18 +523,23 @@
   function buildChiPhi(bcqtRows, khkdRows, deptMap) {
     const khMap = new Map();
     (khkdRows || []).forEach(r => {
+      const pb = normDept(r['Phòng ban'] || r.phong_ban, deptMap);
+      if (pb.toLowerCase().includes('tổng công ty') || pb.toLowerCase().includes('tong cong ty')) return; // Bỏ qua cấp tổng hợp công ty
       const t = parseInt(r['Tháng'] || r.thang || 0);
       const n = parseInt(r['Năm'] || r.nam || 2026);
       const ms = String(r['Mã số'] || r.ma_so || '').trim();
-      const pb = normDept(r['Phòng ban'] || r.phong_ban, deptMap);
       const km = String(r['Khoản mục'] || r.khoan_muc || '').trim().toLowerCase();
       const val = toNum(r['Kế hoạch'] || r.ke_hoach);
       if (t && ms) khMap.set(`${t}_${n}_${ms}_${pb}`, val);
       if (t && km) khMap.set(`${t}_${n}_name_${km}_${pb}`, val);
+      // Lưu thêm fallback theo mã chung
+      if (t && ms && !khMap.has(`${t}_${n}_${ms}_all`)) khMap.set(`${t}_${n}_${ms}_all`, val);
     });
 
     const chiPhi = [];
     (bcqtRows || []).forEach(r => {
+      const pb = normDept(r['Phòng ban'] || r.phong_ban, deptMap);
+      if (pb.toLowerCase().includes('tổng công ty') || pb.toLowerCase().includes('tong cong ty')) return; // Bỏ qua cấp tổng hợp công ty để không bị nhân đôi chi phí
       const cap = parseInt(r['Cấp'] || r.cap || 0);
       if (cap < 2) return;
       const maStr = String(r['Mã số'] || r.ma_so || '').trim();
@@ -545,13 +550,12 @@
       const nam = parseInt(r['Năm'] || r.nam || 2026);
       if (!thang) return;
       const label = `T${thang}/${nam}`;
-      const pb = normDept(r['Phòng ban'] || r.phong_ban, deptMap);
       const km = String(r['Khoản mục'] || r.khoan_muc || '').trim();
       const tt = toNum(r['Thực tế'] || r.thuc_te);
 
       let phanLoai = 'Chi phí khác';
       if (ma >= 8 && ma < 9) phanLoai = 'Chi phí bán hàng';
-      else if (ma >= 9 && ma < 10) phanLoai = 'Chi phí quản lý';
+      else if (ma >= 10 && ma < 11) phanLoai = 'Chi phí quản lý';
 
       let dm = khMap.get(`${thang}_${nam}_${maStr}_${pb}`);
       if (dm === undefined && km) dm = khMap.get(`${thang}_${nam}_name_${km.toLowerCase()}_${pb}`);
