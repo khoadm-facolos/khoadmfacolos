@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="sanpham-tinhthanh-data.js"></script>
 <style>
 :root{
   --brand:#0E3D34; --brand-dark:#071F1A; --brand-surface:#123B2E;
@@ -12625,7 +12626,15 @@ function getActualMonths(){
       if(p) map.set(p.label, p);
     });
   }
-  // 2. Dự phòng: Quét từ KPI có giá trị Thực tế > 0
+  // 2. Quét từ tinhThanh / sanPhamCT
+  const spTinhRows = (RAW && RAW.tinhThanh && RAW.tinhThanh.length) ? RAW.tinhThanh : (window.AGG_SANPHAM_DATA && window.AGG_SANPHAM_DATA.tinhThanh ? window.AGG_SANPHAM_DATA.tinhThanh : []);
+  if(spTinhRows && spTinhRows.length){
+    spTinhRows.forEach(r => {
+      const p = parseMonth(r['Tháng'] || r.thang);
+      if(p) map.set(p.label, p);
+    });
+  }
+  // 3. Dự phòng: Quét từ KPI có giá trị Thực tế > 0
   if(!map.size && RAW && RAW.kpi && RAW.kpi.length){
     RAW.kpi.forEach(r => {
       const tt = toNum(r['Thực tế (tỷ đồng)']);
@@ -12691,6 +12700,15 @@ function setupDateFilters(){
 function startApp(data){
   RAW = data;
   window.RAW = data;
+  // Tự động kết hợp dữ liệu pre-aggregated Sản phẩm SKU & Tỉnh thành từ file sanpham-tinhthanh-data.js
+  if(window.AGG_SANPHAM_DATA){
+    if((!RAW.sanPhamCT || !RAW.sanPhamCT.length) && window.AGG_SANPHAM_DATA.sanPhamCT && window.AGG_SANPHAM_DATA.sanPhamCT.length){
+      RAW.sanPhamCT = window.AGG_SANPHAM_DATA.sanPhamCT;
+    }
+    if((!RAW.tinhThanh || !RAW.tinhThanh.length || (window.AGG_SANPHAM_DATA.tinhThanh && window.AGG_SANPHAM_DATA.tinhThanh.length > RAW.tinhThanh.length)) && window.AGG_SANPHAM_DATA.tinhThanh){
+      RAW.tinhThanh = window.AGG_SANPHAM_DATA.tinhThanh;
+    }
+  }
   if(!RAW.tinhThanh) RAW.tinhThanh = [];
   if(!RAW.sanPhamCT) RAW.sanPhamCT = [];
   if(!RAW.bcqt) RAW.bcqt = [];
@@ -12702,17 +12720,27 @@ function startApp(data){
   const actMos = getActualMonths();
   allMonths = actMos.length ? actMos : buildMonthList(RAW.kpi);
   setupDateFilters();
-  document.getElementById('kenhSelect').value = 'ALL';
-  document.getElementById('spSelect').value = 'ALL';
-  document.getElementById('costTypeSelect').value = 'ALL';
-  document.getElementById('costStatusSelect').value = 'ALL';
-  activeTab = 'tongquan';
+  const kenhEl = document.getElementById('kenhSelect');
+  if(kenhEl && !kenhEl.value) kenhEl.value = 'ALL';
+  const spEl = document.getElementById('spSelect');
+  if(spEl && !spEl.value) spEl.value = 'ALL';
+  const ctEl = document.getElementById('costTypeSelect');
+  if(ctEl && !ctEl.value) ctEl.value = 'ALL';
+  const csEl = document.getElementById('costStatusSelect');
+  if(csEl && !csEl.value) csEl.value = 'ALL';
+
+  // Giữ nguyên tab người dùng đang chọn, không ép buộc nhảy về Tổng quan khi đồng bộ lại
+  if(!activeTab) activeTab = 'tongquan';
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-tongquan').classList.add('active');
-  document.querySelectorAll('.nav-link').forEach(a=>a.classList.toggle('active', a.dataset.tab==='tongquan'));
+  const targetPanel = document.getElementById('panel-' + activeTab) || document.getElementById('panel-tongquan');
+  if(targetPanel) targetPanel.classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(a=>a.classList.toggle('active', a.dataset.tab === activeTab));
+
   renderAll();
-  document.getElementById('uploadScreen').style.display = 'none';
-  document.getElementById('reportScreen').style.display = 'block';
+  const upScr = document.getElementById('uploadScreen');
+  if(upScr) upScr.style.display = 'none';
+  const repScr = document.getElementById('reportScreen');
+  if(repScr) repScr.style.display = 'block';
   if(typeof initSidebarDesktop === 'function') initSidebarDesktop();
   if(!window._hasFetchedNhanXetOnce && typeof fetchNhanXetFromGoogleSheet === 'function'){
     setTimeout(() => fetchNhanXetFromGoogleSheet(false), 600);
@@ -16481,6 +16509,5 @@ window.addEventListener('DOMContentLoaded', function(){
 <script src="bctc-data.js"></script>
 <script src="bctc-logic.js"></script>
 <script src="bctc-ui.js"></script>
-<script src="sanpham-tinhthanh-data.js"></script>
 <script src="supabase-loader.js"></script>
 </body></html>
