@@ -60,8 +60,7 @@
     const headers = {
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'count=exact'
+      'Content-Type': 'application/json'
     };
     let allRows = [];
     let from = 0;
@@ -963,8 +962,29 @@
       // 7. Tải ngầm chi tiết sản phẩm SKU & tỉnh thành từ detail_sanpham trên Supabase
       (async function syncSanPhamBackground() {
         try {
-          const spColumns = 'Ngày hạch toán,Tên hàng,Tổng số lượng bán,DTHU NET,Doanh số bán,Tên nhóm khách hàng sửa,Tỉnh thành phố_chuẩn,"Tỉnh/Thành phố","Địa điểm giao hàng","NHOM VTHH",Tháng';
-          const spRows = await fetchAll(T_SP, spColumns).catch(() => fetchAll(T_SP, '*'));
+          const spColumns = 'Ngày hạch toán,Tên hàng,Tổng số lượng bán,DTHU NET,Doanh số bán,Tên nhóm khách hàng sửa,Tỉnh thành phố_chuẩn,"NHÓM VTHH",Tháng,id';
+          const headers = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          };
+          let spRows = [];
+          let lastId = 0;
+          const PAGE = 1000;
+          while (true) {
+            const url = `${SUPABASE_URL}/rest/v1/${T_SP}?select=${encodeURIComponent(spColumns)}&id=gt.${lastId}&order=id.asc&limit=${PAGE}`;
+            const res = await fetch(url, { headers });
+            if (!res.ok) {
+              const txt = await res.text();
+              throw new Error(`Bảng ${T_SP} [${res.status}]: ${txt}`);
+            }
+            const rows = await res.json();
+            if (!Array.isArray(rows) || rows.length === 0) break;
+            spRows = spRows.concat(rows);
+            lastId = rows[rows.length - 1].id;
+            if (rows.length < PAGE) break;
+          }
+
           if (spRows && spRows.length) {
             const resSP = buildSanPhamFromDetail(spRows);
             if (resSP.sanPham && resSP.sanPham.length) {
@@ -972,16 +992,24 @@
               if (window.RAW) window.RAW.sanPham = resSP.sanPham;
             }
             if (resSP.sanPhamCT && resSP.sanPhamCT.length) {
-              finalData.sanPhamCT = resSP.sanPhamCT;
-              if (window.RAW) window.RAW.sanPhamCT = resSP.sanPhamCT;
+              const newMonths = new Set(resSP.sanPhamCT.map(r => r['Tháng']));
+              const oldCT = (finalData.sanPhamCT || []).filter(r => !newMonths.has(r['Tháng']));
+              finalData.sanPhamCT = oldCT.concat(resSP.sanPhamCT);
+              if (window.RAW) window.RAW.sanPhamCT = finalData.sanPhamCT;
             }
             if (resSP.tinhThanh && resSP.tinhThanh.length) {
-              finalData.tinhThanh = resSP.tinhThanh;
-              if (window.RAW) window.RAW.tinhThanh = resSP.tinhThanh;
+              const newTinhMonths = new Set(resSP.tinhThanh.map(r => r['Tháng']));
+              const oldTinh = (finalData.tinhThanh || []).filter(r => !newTinhMonths.has(r['Tháng']));
+              finalData.tinhThanh = oldTinh.concat(resSP.tinhThanh);
+              if (window.RAW) window.RAW.tinhThanh = finalData.tinhThanh;
             }
             if (typeof window.renderAll === 'function') {
               window.renderAll();
-            } else if (typeof activeTab !== 'undefined' && activeTab === 'doanhthu' && typeof renderChannelProduct === 'function') {
+            }
+            if (typeof window.renderTopListSp === 'function') window.renderTopListSp();
+            if (typeof window.renderTopTinhThanh === 'function') window.renderTopTinhThanh();
+            if (typeof window.renderCrossBreakdown === 'function') window.renderCrossBreakdown();
+            if (typeof activeTab !== 'undefined' && activeTab === 'doanhthu' && typeof renderChannelProduct === 'function') {
               renderChannelProduct();
             }
           }
