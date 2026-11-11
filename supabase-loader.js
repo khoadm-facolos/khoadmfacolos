@@ -117,13 +117,30 @@
 
   function normProvince(rawName, addr, provMap) {
     let name = String(rawName || '').trim();
-    if (!name && addr) {
-      const parts = String(addr).split(',').map(p => p.trim()).filter(Boolean);
-      if (parts.length > 0) name = parts[parts.length - 1];
+    if (name) {
+      const clean = name.replace(/^Tỉnh\s+|^Thành phố\s+|^TP\.?\s+/i, '').trim();
+      const mapped = provMap.get(clean.toLowerCase()) || provMap.get(name.toLowerCase());
+      if (mapped) return mapped;
     }
-    if (!name) return '(blank)';
-    const clean = name.replace(/^Tỉnh\s+|^Thành phố\s+|^TP\.?\s+/i, '').trim();
-    return provMap.get(clean.toLowerCase()) || provMap.get(name.toLowerCase()) || clean;
+    if (addr) {
+      const a = String(addr).toLowerCase();
+      // Quét tìm tên tỉnh thành trong chuỗi địa chỉ giao hàng
+      for (const [k, v] of provMap.entries()) {
+        if (k.length > 3 && a.includes(k)) {
+          return v;
+        }
+      }
+      const parts = String(addr).split(',').map(p => p.trim()).filter(Boolean);
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        if (p.toLowerCase() === 'việt nam' || p.toLowerCase() === 'vietnam') continue;
+        const clean = p.replace(/^Tỉnh\s+|^Thành phố\s+|^TP\.?\s+/i, '').trim();
+        const mapped = provMap.get(clean.toLowerCase()) || provMap.get(p.toLowerCase());
+        if (mapped) return mapped;
+        if (clean.length > 2) return clean;
+      }
+    }
+    return 'Hà Nội';
   }
 
   /* ===== CHUẨN HOÁ NHÓM VTHH SẢN PHẨM ===== */
@@ -442,16 +459,17 @@
       const catCode = r['NHOM VTHH'] || r['NHÓM VTHH'] || r.nhom_vthh || '';
       const cat = normCategory(catCode, r['Tên hàng'] || r.ten_hang);
       const ch = normChannel(r['Tên nhóm khách hàng sửa'] || r.ten_nhom_kh || '');
-      // Dữ liệu đã được clean_vnd → đã là tỷ đồng, không chia thêm
-      const dthuTy = toNum(r['DTHU NET'] || r.dthu_net);
+      // Doanh thu: nếu đang là tiền VND nguyên bản (> 1000) thì quy đổi ra tỷ đồng
+      const rawDthu = toNum(r['DTHU NET'] || r.dthu_net);
+      const dthuTy = rawDthu > 1000 ? rawDthu / 1e9 : rawDthu;
       let slRaw = toNum(r['Tổng số lượng bán'] || r.tong_so_luong_ban);
       let sl = (slRaw > 0 && slRaw < 0.001) ? Math.round(slRaw * 1e9) : Math.round(slRaw);
       const sku = String(r['Tên hàng'] || r.ten_hang || 'Chưa phân loại').trim();
 
-      // 1. Tổng nhóm sản phẩm
+      // 1. Doanh thu theo Tên hàng (Sản phẩm)
       if (!spMonthMap[monthLabel]) spMonthMap[monthLabel] = {};
-      if (!spMonthMap[monthLabel][cat]) spMonthMap[monthLabel][cat] = { tt: 0, kh: 0 };
-      spMonthMap[monthLabel][cat].tt += dthuTy;
+      if (!spMonthMap[monthLabel][sku]) spMonthMap[monthLabel][sku] = { tt: 0, kh: 0, nhom: cat };
+      spMonthMap[monthLabel][sku].tt += dthuTy;
 
       // 2. Chi tiết SKU
       if (!skuMap[monthLabel]) skuMap[monthLabel] = {};
@@ -468,17 +486,17 @@
       tinhMap[kTinh].dthu += dthuTy;
     });
 
-    // Tạo sanPham
-    const categories = ['Vợt', 'Bóng', 'Phụ kiện', 'Thời trang', 'Vật tư', 'Khác'];
+    // Tạo sanPham: Lấy theo cột "Tên hàng" (SKU) thay vì Nhóm VTHH
     const sanPham = [];
     Object.keys(spMonthMap).sort().forEach(ml => {
-      categories.forEach(cat => {
-        const item = spMonthMap[ml][cat] || { tt: 0, kh: 0 };
+      Object.keys(spMonthMap[ml]).forEach(sku => {
+        const item = spMonthMap[ml][sku];
         sanPham.push({
           'Tháng': ml,
-          'Sản phẩm': cat,
-          'Kế hoạch (tỷ đồng)': item.kh,
-          'Thực tế (tỷ đồng)': item.tt
+          'Sản phẩm': sku,                  // Cột Tên hàng
+          'Nhóm': item.nhom,                // Nhóm VTHH
+          'Kế hoạch (tỷ đồng)': item.kh || 0,
+          'Thực tế (tỷ đồng)': item.tt || 0
         });
       });
     });
@@ -870,14 +888,36 @@
       }
 
       // 5. Chuẩn bị dữ liệu sản phẩm / tỉnh thành ban đầu:
-      // Tính tức thì nhóm sản phẩm từ BCQT & KHKD để hiển thị ngay lập tức đầy đủ Thực tế và Kế hoạch
-      let sanPham = buildSanPham(bcqtRows, khkdRows);
       let sanPhamCT = (window.AGG_SANPHAM_DATA && window.AGG_SANPHAM_DATA.sanPhamCT && window.AGG_SANPHAM_DATA.sanPhamCT.length)
         ? window.AGG_SANPHAM_DATA.sanPhamCT
         : ((window.RAW && window.RAW.sanPhamCT) ? window.RAW.sanPhamCT : []);
       let tinhThanh = (window.AGG_SANPHAM_DATA && window.AGG_SANPHAM_DATA.tinhThanh && window.AGG_SANPHAM_DATA.tinhThanh.length)
         ? window.AGG_SANPHAM_DATA.tinhThanh
         : ((window.RAW && window.RAW.tinhThanh) ? window.RAW.tinhThanh : []);
+
+      // Doanh thu theo sản phẩm: gom theo Tên hàng (SKU) thay vì Nhóm VTHH
+      let sanPham = [];
+      if (sanPhamCT && sanPhamCT.length) {
+        const spMap = {};
+        sanPhamCT.forEach(r => {
+          const m = r['Tháng'];
+          const sku = r['Sản phẩm'] || r['Tên hàng'] || 'Chưa phân loại';
+          const k = `${m}#${sku}`;
+          if (!spMap[k]) {
+            spMap[k] = {
+              'Tháng': m,
+              'Sản phẩm': sku,
+              'Nhóm': r['Nhóm'] || '',
+              'Kế hoạch (tỷ đồng)': 0,
+              'Thực tế (tỷ đồng)': 0
+            };
+          }
+          spMap[k]['Thực tế (tỷ đồng)'] += (toNum(r['Doanh thu thuần (tỷ đồng)']) || toNum(r['Doanh thu (tỷ đồng)']) || toNum(r['DTHU NET']) || 0);
+        });
+        sanPham = Object.values(spMap);
+      } else {
+        sanPham = buildSanPham(bcqtRows, khkdRows);
+      }
 
       // 6. Đóng gói data khởi chạy ngay lập tức (không để người dùng chờ 186k dòng)
       const finalData = {
@@ -920,29 +960,35 @@
         alert(`Đồng bộ dữ liệu Supabase thành công lúc ${timeStr}!`);
       }
 
-      // 7. Tải ngầm chi tiết sản phẩm SKU & tỉnh thành từ detail_sanpham (chỉ tải khi chưa có sẵn AGG_SANPHAM_DATA)
-      if (!window.AGG_SANPHAM_DATA || !window.AGG_SANPHAM_DATA.sanPhamCT || !window.AGG_SANPHAM_DATA.sanPhamCT.length) {
-        (async function syncSanPhamBackground() {
-          try {
-            const spColumns = 'Ngày hạch toán,Tên hàng,Tổng số lượng bán,DTHU NET,Doanh số bán,Tên nhóm khách hàng sửa,Tỉnh thành phố_chuẩn,"NHOM VTHH",Tháng';
-            const spRows = await fetchAll(T_SP, spColumns).catch(() => fetchAll(T_SP, '*'));
-            if (spRows && spRows.length) {
-              const resSP = buildSanPhamFromDetail(spRows);
-              if (resSP.sanPhamCT && resSP.sanPhamCT.length) finalData.sanPhamCT = resSP.sanPhamCT;
-              if (resSP.tinhThanh && resSP.tinhThanh.length) finalData.tinhThanh = resSP.tinhThanh;
-              if (window.RAW) {
-                window.RAW.sanPhamCT = finalData.sanPhamCT;
-                window.RAW.tinhThanh = finalData.tinhThanh;
-              }
-              if (typeof activeTab !== 'undefined' && activeTab === 'doanhthu' && typeof renderChannelProduct === 'function') {
-                renderChannelProduct();
-              }
+      // 7. Tải ngầm chi tiết sản phẩm SKU & tỉnh thành từ detail_sanpham trên Supabase
+      (async function syncSanPhamBackground() {
+        try {
+          const spColumns = 'Ngày hạch toán,Tên hàng,Tổng số lượng bán,DTHU NET,Doanh số bán,Tên nhóm khách hàng sửa,Tỉnh thành phố_chuẩn,"Tỉnh/Thành phố","Địa điểm giao hàng","NHOM VTHH",Tháng';
+          const spRows = await fetchAll(T_SP, spColumns).catch(() => fetchAll(T_SP, '*'));
+          if (spRows && spRows.length) {
+            const resSP = buildSanPhamFromDetail(spRows);
+            if (resSP.sanPham && resSP.sanPham.length) {
+              finalData.sanPham = resSP.sanPham;
+              if (window.RAW) window.RAW.sanPham = resSP.sanPham;
             }
-          } catch (eSP) {
-            console.warn('Đồng bộ ngầm detail_sanpham:', eSP);
+            if (resSP.sanPhamCT && resSP.sanPhamCT.length) {
+              finalData.sanPhamCT = resSP.sanPhamCT;
+              if (window.RAW) window.RAW.sanPhamCT = resSP.sanPhamCT;
+            }
+            if (resSP.tinhThanh && resSP.tinhThanh.length) {
+              finalData.tinhThanh = resSP.tinhThanh;
+              if (window.RAW) window.RAW.tinhThanh = resSP.tinhThanh;
+            }
+            if (typeof window.renderAll === 'function') {
+              window.renderAll();
+            } else if (typeof activeTab !== 'undefined' && activeTab === 'doanhthu' && typeof renderChannelProduct === 'function') {
+              renderChannelProduct();
+            }
           }
-        })();
-      }
+        } catch (eSP) {
+          console.warn('Đồng bộ ngầm detail_sanpham:', eSP);
+        }
+      })();
     } catch (err) {
       console.error('Lỗi khi nạp dữ liệu từ Supabase:', err);
       setSyncStatus('warn', `⚠️ Lỗi kết nối Supabase: ${err.message}`);
